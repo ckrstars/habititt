@@ -1,0 +1,256 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary-color: #3B82F6;
+    --background-color: #ffffff;
+    --text-color: #1f2937;
+    --card-color: #ffffff;
+    --accent-color: #14B8A6;
+  }
+
+  .dark {
+    --primary-color: #14B8A6;
+    --background-color: #121212;
+    --text-color: #e0e0e0;
+    --card-color: #1e1e1e;
+    --accent-color: #3B82F6;
+  }
+
+  body {
+    @apply bg-surface-light text-text-light dark:bg-surface-dark dark:text-text-dark transition-colors duration-300 font-['Inter'];
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-['Outfit'];
+  }
+
+  .custom-theme {
+    /* These values will be set dynamically via JavaScript */
+  }
+
+  .custom-theme body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+  }
+
+  /* Calendar grid colors */
+  .calendar-grid-cell {
+    @apply rounded-sm border border-gray-300 dark:border-gray-700 transition-all duration-300;
+    width: 12px;
+    height: 12px;
+  }
+
+  .calendar-grid-cell.empty {
+    @apply bg-gray-200 dark:bg-gray-800;
+  }
+
+  .calendar-grid-cell.filled {
+    @apply bg-primary-light dark:bg-primary-dark;
+  }
+
+  .custom-theme .calendar-grid-cell.filled {
+    background-color: var(--primary-color);
+  }
+
+  /* Add more grid colors */
+  .grid-yellow { @apply bg-yellow-400 dark:bg-yellow-500; }
+  .grid-green { @apply bg-green-400 dark:bg-green-500; }
+  .grid-blue { @apply bg-blue-400 dark:bg-blue-500; }
+  .grid-purple { @apply bg-purple-400 dark:bg-purple-500; }
+  .grid-pink { @apply bg-pink-400 dark:bg-pink-500; }
+  .grid-orange { @apply bg-orange-400 dark:bg-orange-500; }
+  .grid-red { @apply bg-red-400 dark:bg-red-500; }
+  
+  /* Grid gradients for progress indication */
+  .calendar-grid-cell.level-1 { opacity: 0.2; }
+  .calendar-grid-cell.level-2 { opacity: 0.4; }
+  .calendar-grid-cell.level-3 { opacity: 0.6; }
+  .calendar-grid-cell.level-4 { opacity: 0.8; }
+  .calendar-grid-cell.level-5 { opacity: 1.0; }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-2xl font-medium transition-all duration-300 active:scale-95;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary-light text-white dark:bg-primary-dark hover:opacity-90;
+  }
+
+  .custom-theme .btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+  }
+
+  .btn-secondary {
+    @apply btn border-2 border-primary-light text-primary-light dark:border-primary-dark dark:text-primary-dark hover:bg-primary-light/10 dark:hover:bg-primary-dark/10;
+  }
+
+  .custom-theme .btn-secondary {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+  }
+
+  .custom-theme .btn-secondary:hover {
+    background-color: var(--primary-color, #3B82F6);
+    opacity: 0.1;
+  }
+
+  .card {
+    @apply bg-white dark:bg-surface-dark rounded-2xl shadow-lg p-4 transition-all duration-300;
+  }
+
+  .custom-theme .card {
+    background-color: var(--card-color);
+    color: var(--text-color);
+  }
+
+  .input {
+    @apply w-full px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-transparent focus:outline-none focus:border-primary-light dark:focus:border-primary-dark transition-all duration-300;
+  }
+
+  .custom-theme .input {
+    border-color: rgba(0, 0, 0, 0.2);
+    color: var(--text-color);
+  }
+
+  .custom-theme .input:focus {
+    border-color: var(--primary-color);
+  }
+
+  /* Habit Grid Calendar */
+  .habit-calendar {
+    @apply grid gap-1;
+    grid-template-columns: repeat(53, 12px);
+    grid-auto-rows: 12px;
+  }
+
+  /* Color picker */
+  .color-swatch {
+    @apply w-8 h-8 rounded-full cursor-pointer border-2 border-transparent hover:scale-110 transition-transform;
+  }
+
+  .color-swatch.selected {
+    @apply border-black dark:border-white;
+  }
+
+  /* Widget styles */
+  .widget {
+    @apply rounded-2xl overflow-hidden shadow-lg;
+  }
+
+  .widget-small {
+    @apply w-full;
+  }
+
+  .widget-medium {
+    @apply w-full;
+  }
+
+  .widget-large {
+    @apply w-full;
+  }
+
+  @screen md {
+    .widget-small {
+      @apply w-1/3;
+    }
+    .widget-medium {
+      @apply w-1/2;
+    }
+  }
+
+  /* Tab styles */
+  .tab {
+    @apply px-4 py-2 font-medium cursor-pointer border-b-2 border-transparent;
+  }
+
+  .tab.active {
+    @apply border-primary-light dark:border-primary-dark text-primary-light dark:text-primary-dark;
+  }
+
+  .custom-theme .tab.active {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+  }
+
+  /* HabitKit style grid */
+  .habit-grid {
+    @apply grid gap-1;
+    grid-template-columns: repeat(7, 12px);
+    grid-template-rows: repeat(5, 12px);
+  }
+
+  /* Reminder message styles */
+  .reminder-message {
+    @apply flex items-center p-4 rounded-2xl mb-4;
+  }
+
+  .reminder-message-icon {
+    @apply text-2xl mr-3;
+  }
+
+  .reminder-message-content {
+    @apply flex-1;
+  }
+
+  /* Progress bar */
+  .progress-bar-container {
+    @apply relative h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden;
+  }
+
+  .progress-bar-fill {
+    @apply absolute h-full rounded-full transition-all duration-300 ease-out;
+  }
+
+  .custom-theme .progress-bar-fill {
+    background-color: var(--primary-color);
+  }
+  
+  /* Dropdown animation */
+  .dropdown-enter {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  
+  .dropdown-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 150ms, transform 150ms;
+  }
+  
+  .dropdown-exit {
+    opacity: 1;
+  }
+  
+  .dropdown-exit-active {
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 150ms, transform 150ms;
+  }
+  
+  /* Animated logo styles */
+  .logo-text {
+    @apply font-['Outfit'] font-black tracking-tighter;
+    letter-spacing: -0.05em;
+  }
+  
+  /* Select dropdown styling */
+  .select-dropdown {
+    @apply absolute z-50 w-full mt-1 overflow-auto bg-white rounded-lg shadow-lg max-h-60 dark:bg-gray-800 border border-gray-200 dark:border-gray-700;
+  }
+  
+  .select-option {
+    @apply flex items-center px-4 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700;
+  }
+  
+  .select-option.active {
+    @apply bg-primary-light/10 dark:bg-primary-dark/20;
+  }
+} 
