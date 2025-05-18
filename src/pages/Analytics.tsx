@@ -9,8 +9,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
   PieChart,
   Pie,
   Cell,
@@ -52,7 +50,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 // Custom label for pie chart
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name }: any) => {
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
@@ -295,23 +293,6 @@ const Analytics = () => {
     return dayData;
   });
 
-  // Get monthly data
-  const monthlyData = Array.from({ length: 30 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
-
-    return {
-      date: dateStr,
-      completed: habits
-        .filter((habit) => selectedHabit === 'all' || habit.id === selectedHabit)
-        .reduce((acc, habit) => {
-          const dayHistory = habit.history.find((h) => h.date === dateStr);
-          return acc + (dayHistory?.completed ? 1 : 0);
-        }, 0),
-    };
-  }).reverse();
-
   // Get category stats for pie chart
   const categoryStats = getCategoryStats();
   const pieData = Object.entries(categoryStats)
@@ -474,7 +455,7 @@ const Analytics = () => {
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {pieData.map((entry, index) => (
+                    {pieData.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -533,7 +514,7 @@ const Analytics = () => {
                     background
                     dataKey="value"
                   >
-                    {timeData.map((entry, index) => (
+                    {timeData.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </RadialBar>

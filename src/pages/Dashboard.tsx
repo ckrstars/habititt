@@ -152,17 +152,14 @@ const Dashboard = () => {
   const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
   const [reminders, setReminders] = useState<{ id: string; message: string; icon: string }[]>([]);
   
-  const { 
-    habits, 
-    incrementProgress, 
-    decrementProgress, 
+  const {
+    habits,
+    incrementProgress,
+    decrementProgress,
     completeHabit,
     undoCompleteHabit,
-    isHabitCompletedToday
   } = useHabitStore();
   
-  const { theme, toggleTheme } = useThemeStore();
-
   // Check for reminders on component mount and when habits change
   useEffect(() => {
     const checkReminders = () => {

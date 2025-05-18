@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaArrowLeft, FaTrash, FaBell, FaTimes, FaPlusCircle, FaDesktop, FaFileExport, FaFileImport } from 'react-icons/fa';
+import { FaArrowLeft, FaTrash, FaBell, FaTimes, FaPlusCircle, FaFileExport, FaFileImport } from 'react-icons/fa';
 import { useThemeStore } from '../store/themeStore';
 import useHabitStore from '../store/habitStore';
 

@@ -60,17 +60,6 @@ const categoryColors = {
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-// Icons for mock habits
-const ICONS = {
-  health: ['🏃', '💧', '🍎', '💤', '🧘'],
-  productivity: ['📝', '⏰', '📚', '💻', '📈'],
-  learning: ['🧠', '📖', '🔍', '🎓', '💡'],
-  mindfulness: ['🧘', '🌱', '🌈', '🌞', '🌙'],
-  finance: ['💰', '💸', '📊', '💳', '🏦'],
-  social: ['👋', '👥', '💬', '🤝', '🎉'],
-  custom: ['🎯', '🎨', '🎮', '🏆', '✨'],
-};
-
 const useHabitStore = create<HabitState>()(
   persist(
     (set, get) => ({
