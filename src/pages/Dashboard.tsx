@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaPlus, FaMoon, FaSun, FaPalette, FaCheckCircle } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import HabitCard from '../components/HabitCard';
-import useHabitStore from '../store/habitStore';
+import useSupabaseStore from '../store/supabaseStore';
 import { useThemeStore } from '../store/themeStore';
 import NewHabitModal from '../components/NewHabitModal';
 import ReminderMessage from '../components/ReminderMessage';
@@ -152,14 +152,27 @@ const Dashboard = () => {
   const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
   const [reminders, setReminders] = useState<{ id: string; message: string; icon: string }[]>([]);
   
+  // Use Supabase store
   const {
     habits,
+    loading,
+    error,
+    fetchHabits,
+    addHabit,
+    updateHabit,
+    deleteHabit,
     incrementProgress,
     decrementProgress,
     completeHabit,
     undoCompleteHabit,
-  } = useHabitStore();
+  } = useSupabaseStore();
   
+  // Fetch habits on mount
+  useEffect(() => {
+    fetchHabits();
+    // eslint-disable-next-line
+  }, []);
+
   // Check for reminders on component mount and when habits change
   useEffect(() => {
     const checkReminders = () => {
@@ -168,11 +181,11 @@ const Dashboard = () => {
       const currentMinute = currentTime.getMinutes();
       
       const dueReminders = habits
-        .filter(habit => habit.reminderEnabled && habit.reminderTime)
+        .filter(habit => habit.reminder_enabled && habit.reminder_time)
         .filter(habit => {
-          if (!habit.reminderTime) return false;
+          if (!habit.reminder_time) return false;
           
-          const [hour, minute] = habit.reminderTime.split(':').map(Number);
+          const [hour, minute] = habit.reminder_time.split(':').map(Number);
           // For demo purposes, we're showing reminders that would be due in the last hour
           // In a real app, you'd want to be more precise and use a background service
           return hour === currentHour && Math.abs(minute - currentMinute) < 60;
@@ -207,6 +220,41 @@ const Dashboard = () => {
     setReminders(reminders.filter(reminder => reminder.id !== id));
   };
 
+  // Show loading and error states
+  if (loading) {
+    return (
+      <div className="min-h-screen p-4 md:p-6">
+        {/* Logo skeleton */}
+        <div className="flex items-center mb-8">
+          <div className="w-14 h-14 rounded-xl bg-gray-200 dark:bg-gray-700 animate-pulse mr-4" />
+          <div>
+            <div className="h-8 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2" />
+            <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+          </div>
+        </div>
+        {/* Header skeleton */}
+        <div className="h-10 w-64 bg-gray-200 dark:bg-gray-700 rounded mb-6 animate-pulse" />
+        {/* Reminders skeleton */}
+        <div className="space-y-2 mb-6">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse" />
+          ))}
+        </div>
+        {/* Habit cards skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-40 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+  if (error) {
+    return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
+  }
+
+  const hasHabits = habits.length > 0;
+
   return (
     <div className="min-h-screen p-4 md:p-6">
       {/* HABITIT logo header */}
@@ -229,35 +277,50 @@ const Dashboard = () => {
         </AnimatePresence>
       </div>
 
-      {/* Habit cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <AnimatePresence>
-          {habits.map((habit, index) => (
-            <motion.div 
-              key={habit.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ delay: index * 0.1, duration: 0.3 }}
-            >
-              <HabitCard
-                habit={habit}
-                onIncrement={() => incrementProgress(habit.id)}
-                onDecrement={() => decrementProgress(habit.id)}
-                onComplete={() => completeHabit(habit.id)}
-                onUndoComplete={() => undoCompleteHabit(habit.id)}
-                onEdit={() => handleEditHabit(habit.id)}
-              />
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
+      {/* Empty state or Habit cards */}
+      {!hasHabits ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center text-gray-400 dark:text-gray-500">
+          <FaCheckCircle className="text-6xl mb-4 opacity-30" />
+          <h3 className="text-2xl font-semibold mb-2">No habits yet</h3>
+          <p className="mb-4">Start by adding your first habit to begin your journey!</p>
+          <button
+            className="btn-primary flex items-center gap-2 mx-auto"
+            onClick={() => { setIsModalOpen(true); setEditingHabitId(null); }}
+          >
+            <FaPlus /> Add Habit
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <AnimatePresence>
+            {habits.map((habit, index) => (
+              <motion.div 
+                key={habit.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ delay: index * 0.1, duration: 0.3 }}
+              >
+                <HabitCard
+                  habit={habit}
+                  onEdit={() => handleEditHabit(habit.id)}
+                  onDelete={() => deleteHabit(habit.id)}
+                  onIncrement={() => incrementProgress(habit.id)}
+                  onDecrement={() => decrementProgress(habit.id)}
+                  onComplete={() => completeHabit(habit.id)}
+                  onUndoComplete={() => undoCompleteHabit(habit.id)}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
 
-      {/* Add habit button */}
+      {/* Add habit button (floating) */}
       <motion.button
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        onClick={() => setIsModalOpen(true)}
+        onClick={() => { setIsModalOpen(true); setEditingHabitId(null); }}
         className="fixed bottom-6 right-6 btn-primary rounded-full p-4 shadow-lg"
         aria-label="Add new habit"
       >
@@ -270,8 +333,12 @@ const Dashboard = () => {
       {/* Habit modal (create or edit) */}
       {isModalOpen && (
         <NewHabitModal
+          isOpen={isModalOpen}
           onClose={handleCloseModal}
-          editHabit={editingHabitId || undefined}
+          habitId={editingHabitId}
+          onAdd={addHabit}
+          onUpdate={updateHabit}
+          habits={habits}
         />
       )}
     </div>

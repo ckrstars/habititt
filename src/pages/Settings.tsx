@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FaArrowLeft, FaTrash, FaBell, FaTimes, FaPlusCircle, FaFileExport, FaFileImport } from 'react-icons/fa';
 import { useThemeStore } from '../store/themeStore';
 import useHabitStore from '../store/habitStore';
+import { useAuth } from '../contexts/AuthContext';
 
 type WidgetType = 'streak' | 'calendar' | 'weeklyProgress' | 'categoryStats' | 'timeAnalysis' | 'habitComparison';
 
@@ -45,6 +46,7 @@ const Settings = () => {
   const [backgroundTheme, setBackgroundTheme] = useState(() => {
     return localStorage.getItem('backgroundTheme') || 'default';
   });
+  const { loading } = useAuth();
 
   const handleNotificationToggle = () => {
     const newValue = !notifications;
@@ -113,6 +115,17 @@ const Settings = () => {
       alert('Export failed. Please try again.');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen p-4 md:p-6">
+        <div className="h-10 w-64 bg-gray-200 dark:bg-gray-700 rounded mb-6 animate-pulse" />
+        <div className="card mb-6 animate-pulse h-32" />
+        <div className="card mb-6 animate-pulse h-32" />
+        <div className="card mb-6 animate-pulse h-32" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-4 md:p-6">

@@ -6,13 +6,28 @@ import { motion } from 'framer-motion';
 
 export default function Welcome() {
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if user is already logged in
   if (user) {
     navigate('/dashboard');
     return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light to-primary-dark dark:from-gray-900 dark:to-gray-800 p-4">
+        <div className="w-full max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="h-12 w-64 bg-gray-200 dark:bg-gray-700 rounded mx-auto mb-4 animate-pulse" />
+            <div className="h-6 w-48 bg-gray-200 dark:bg-gray-700 rounded mx-auto animate-pulse" />
+          </div>
+          <div className="h-10 w-80 bg-gray-200 dark:bg-gray-700 rounded mx-auto mb-6 animate-pulse" />
+          <div className="h-96 w-full max-w-md mx-auto bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
+        </div>
+      </div>
+    );
   }
 
   return (

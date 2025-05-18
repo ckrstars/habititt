@@ -10,7 +10,7 @@
     --background-color: #ffffff;
     --text-color: #1f2937;
     --card-color: #ffffff;
-    --accent-color: #14B8A6;
+    --accent-color: #3B82F6;
   }
 
   .dark {
@@ -18,7 +18,7 @@
     --background-color: #121212;
     --text-color: #e0e0e0;
     --card-color: #1e1e1e;
-    --accent-color: #3B82F6;
+    --accent-color: #14B8A6;
   }
 
   body {
@@ -80,7 +80,7 @@
   }
 
   .btn-primary {
-    @apply btn bg-primary-light text-white dark:bg-primary-dark hover:opacity-90;
+    @apply bg-accent-light dark:bg-accent-dark text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity;
   }
 
   .custom-theme .btn-primary {
@@ -89,7 +89,7 @@
   }
 
   .btn-secondary {
-    @apply btn border-2 border-primary-light text-primary-light dark:border-primary-dark dark:text-primary-dark hover:bg-primary-light/10 dark:hover:bg-primary-dark/10;
+    @apply bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors;
   }
 
   .custom-theme .btn-secondary {
@@ -103,7 +103,7 @@
   }
 
   .card {
-    @apply bg-white dark:bg-surface-dark rounded-2xl shadow-lg p-4 transition-all duration-300;
+    @apply bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 transition-colors duration-200;
   }
 
   .custom-theme .card {
@@ -112,7 +112,7 @@
   }
 
   .input {
-    @apply w-full px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-transparent focus:outline-none focus:border-primary-light dark:focus:border-primary-dark transition-all duration-300;
+    @apply bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-accent-light dark:focus:ring-accent-dark;
   }
 
   .custom-theme .input {
@@ -168,11 +168,11 @@
 
   /* Tab styles */
   .tab {
-    @apply px-4 py-2 font-medium cursor-pointer border-b-2 border-transparent;
+    @apply px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-accent-light dark:hover:text-accent-dark transition-colors;
   }
 
   .tab.active {
-    @apply border-primary-light dark:border-primary-dark text-primary-light dark:text-primary-dark;
+    @apply text-accent-light dark:text-accent-dark border-b-2 border-accent-light dark:border-accent-dark;
   }
 
   .custom-theme .tab.active {
@@ -251,6 +251,6 @@
   }
   
   .select-option.active {
-    @apply bg-primary-light/10 dark:bg-primary-dark/20;
+    @apply bg-blue-500/10 dark:bg-teal-500/20;
   }
 } 

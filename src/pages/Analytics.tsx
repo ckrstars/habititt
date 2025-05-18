@@ -1,578 +1,740 @@
-import { useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { FaArrowLeft, FaChartPie, FaChartLine, FaChartBar, FaCalendarAlt, FaPlus, FaFire, FaList } from 'react-icons/fa';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-  RadialBarChart,
-  RadialBar,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-} from 'recharts';
-import useHabitStore from '../store/habitStore';
-import HabitCalendar from '../components/HabitCalendar';
-import HabitWidget from '../components/widgets/HabitWidget';
+import { FaArrowLeft, FaCalendarAlt, FaPlus, FaFire, FaTimes, FaMoon, FaGripVertical, FaEye, FaEyeSlash, FaThumbtack, FaCalendarDay, FaCalendarWeek, FaCalendar, FaCheck, FaEdit, FaUndo, FaTrash } from 'react-icons/fa';
+import useSupabaseStore from '../store/supabaseStore';
+import { Habit, HabitHistory } from '../lib/supabase';
+import { AnimatePresence, motion } from 'framer-motion';
+import { DragDropContext, Droppable, Draggable, DropResult, DroppableProvided, DraggableProvided } from 'react-beautiful-dnd';
+import { createContext } from 'react';
+import { useConfetti } from '../hooks/useConfetti';
+import confetti from 'canvas-confetti';
 
-const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// Daily Details Modal Component
+const DailyDetailsModal = ({ 
+  isOpen, 
+  onClose, 
+  date, 
+  habits, 
+  history 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  date: string; 
+  habits: Habit[]; 
+  history: Record<string, HabitHistory[]>;
+}) => {
+  if (!isOpen) return null;
 
-// Predefined chart colors
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#a855f7', '#ec4899', '#f43f5e', '#f97316'];
-const RADIAN = Math.PI / 180;
+  const dateObj = new Date(date);
+  const formattedDate = dateObj.toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
 
-// Custom tooltip for charts
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white dark:bg-gray-800 p-2 shadow rounded border border-gray-200 dark:border-gray-700">
-        <p className="font-medium">{label}</p>
-        {payload.map((item: any, index: number) => (
-          <p key={index} style={{ color: item.color }}>
-            {item.name}: {item.value}
-          </p>
+  const habitsForDate = habits.map(habit => {
+    const habitHistory = history[habit.id] || [];
+    const entry = habitHistory.find(h => h.date === date);
+    return {
+      ...habit,
+      completed: entry?.completed || false,
+      count: entry?.count || 0
+    };
+  });
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">{formattedDate}</h2>
+          <button 
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            <FaTimes className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <div className="space-y-4">
+          {habitsForDate.map(habit => (
+            <div 
+              key={habit.id}
+              className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{habit.icon}</span>
+                <div>
+                  <h3 className="font-medium">{habit.name}</h3>
+                  {habit.count_type === 'count' && (
+                    <p className="text-sm text-gray-500">
+                      {habit.count} {habit.count_unit}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-sm ${
+                habit.completed 
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                  : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+              }`}>
+                {habit.completed ? 'Completed' : 'Not Completed'}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Date Range Picker Component
+const DateRangePicker = ({ 
+  startDate, 
+  endDate, 
+  onStartDateChange, 
+  onEndDateChange 
+}: { 
+  startDate: string; 
+  endDate: string; 
+  onStartDateChange: (date: string) => void; 
+  onEndDateChange: (date: string) => void; 
+}) => {
+  const today = new Date();
+  const maxDate = today.toISOString().split('T')[0];
+
+  const setDateRange = (days: number) => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - days);
+    onStartDateChange(start.toISOString().split('T')[0]);
+    onEndDateChange(end.toISOString().split('T')[0]);
+  };
+
+  const setMonthRange = (offset: number = 0) => {
+    const end = new Date();
+    const start = new Date();
+    start.setMonth(start.getMonth() + offset);
+    start.setDate(1);
+    if (offset === 0) {
+      end.setDate(end.getDate());
+    } else {
+      end.setMonth(end.getMonth() + offset + 1);
+      end.setDate(0);
+    }
+    onStartDateChange(start.toISOString().split('T')[0]);
+    onEndDateChange(end.toISOString().split('T')[0]);
+  };
+
+  const quickRanges = [
+    { label: 'Last 7 Days', icon: <FaCalendarDay />, onClick: () => setDateRange(7) },
+    { label: 'Last 30 Days', icon: <FaCalendarWeek />, onClick: () => setDateRange(30) },
+    { label: 'This Month', icon: <FaCalendar />, onClick: () => setMonthRange(0) },
+    { label: 'Last Month', icon: <FaCalendar />, onClick: () => setMonthRange(-1) },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        {quickRanges.map((range) => (
+          <button
+            key={range.label}
+            onClick={range.onClick}
+            className="btn-secondary flex items-center gap-2 px-3 py-1.5 text-sm"
+          >
+            {range.icon}
+            {range.label}
+          </button>
         ))}
+      </div>
+      
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium">From:</label>
+          <input
+            type="date"
+            value={startDate}
+            max={endDate}
+            onChange={e => onStartDateChange(e.target.value)}
+            className="input"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium">To:</label>
+          <input
+            type="date"
+            value={endDate}
+            min={startDate}
+            max={maxDate}
+            onChange={e => onEndDateChange(e.target.value)}
+            className="input"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Widget type definition
+type WidgetType = 'weeklyProgress' | 'categoryStats' | 'streak' | 'habitCalendar' | 'timeAnalysis' | 'consistencyScore';
+type WidgetSize = 'small' | 'medium' | 'large';
+
+interface Widget {
+  id: string;
+  type: WidgetType;
+  size: WidgetSize;
+  visible: boolean;
+  pinned: boolean;
+}
+
+// Theme context
+const ThemeContext = createContext<{
+  isDarkMode: boolean;
+  toggleDarkMode: () => void;
+  accentColor: string;
+  setAccentColor: (color: string) => void;
+}>({
+  isDarkMode: false,
+  toggleDarkMode: () => {},
+  accentColor: '#3B82F6',
+  setAccentColor: () => {},
+});
+
+// Theme Provider Component
+const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved ? JSON.parse(saved) : false;
+  });
+  const [accentColor, setAccentColor] = useState(() => {
+    return localStorage.getItem('accentColor') || '#3B82F6';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+    document.documentElement.classList.toggle('dark', isDarkMode);
+  }, [isDarkMode]);
+
+  useEffect(() => {
+    localStorage.setItem('accentColor', accentColor);
+    document.documentElement.style.setProperty('--accent-color', accentColor);
+  }, [accentColor]);
+
+  return (
+    <ThemeContext.Provider value={{ isDarkMode, toggleDarkMode: () => setIsDarkMode(!isDarkMode), accentColor, setAccentColor }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
+
+// Customizable Widget Component
+const CustomizableWidget = ({ 
+  widget, 
+  onResize, 
+  onToggleVisibility, 
+  onTogglePin,
+  children 
+}: { 
+  widget: Widget; 
+  onResize: (size: WidgetSize) => void;
+  onToggleVisibility: () => void;
+  onTogglePin: () => void;
+  children: React.ReactNode;
+}) => {
+  return (
+    <Draggable draggableId={widget.id} index={parseInt(widget.id)}>
+      {(provided: DraggableProvided) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          className={`card relative ${widget.pinned ? 'ring-2 ring-accent-light dark:ring-accent-dark' : ''}`}
+        >
+          {/* Widget Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div {...provided.dragHandleProps} className="cursor-move">
+              <FaGripVertical className="text-gray-400" />
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onToggleVisibility}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              >
+                {widget.visible ? <FaEye /> : <FaEyeSlash />}
+              </button>
+              <button
+                onClick={onTogglePin}
+                className={`p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded ${
+                  widget.pinned ? 'text-accent-light dark:text-accent-dark' : ''
+                }`}
+              >
+                <FaThumbtack />
+              </button>
+              <select
+                value={widget.size}
+                onChange={(e) => onResize(e.target.value as WidgetSize)}
+                className="input text-sm"
+              >
+                <option value="small">Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Widget Content */}
+          {widget.visible && children}
+        </div>
+      )}
+    </Draggable>
+  );
+};
+
+// Habit Detail Drawer Component
+const HabitDetailDrawer = ({ 
+  isOpen, 
+  onClose, 
+  habit, 
+  history,
+  onEdit,
+  onDelete,
+  onComplete,
+  onUndo
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  habit: Habit; 
+  history: HabitHistory[];
+  onEdit: (habit: Habit) => void;
+  onDelete: (habitId: string) => void;
+  onComplete: (habitId: string) => void;
+  onUndo: (habitId: string, date: string) => void;
+}) => {
+  if (!isOpen) return null;
+
+  // Calculate streak and stats
+  const currentStreak = habit.streak;
+  const bestStreak = Math.max(...history.map(h => h.streak || 0));
+  const completionRate = history.length > 0 
+    ? Math.round((history.filter(h => h.completed).length / history.length) * 100)
+    : 0;
+
+  // Check for milestones
+  const milestones = [
+    { value: 7, label: '1 Week' },
+    { value: 30, label: '1 Month' },
+    { value: 100, label: '100 Days' },
+    { value: 365, label: '1 Year' }
+  ];
+
+  const nextMilestone = milestones.find(m => currentStreak < m.value);
+  const progressToNextMilestone = nextMilestone 
+    ? (currentStreak / nextMilestone.value) * 100 
+    : 100;
+
+  // Trigger confetti for milestones
+  useEffect(() => {
+    if (milestones.some(m => currentStreak === m.value)) {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+  }, [currentStreak]);
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ x: '100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '100%' }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        className="fixed inset-y-0 right-0 w-full max-w-lg bg-white dark:bg-gray-800 shadow-xl z-50 overflow-y-auto"
+      >
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">{habit.icon}</span>
+              <div>
+                <h2 className="text-2xl font-bold">{habit.name}</h2>
+                <p className="text-gray-500 dark:text-gray-400">{habit.description}</p>
+              </div>
+            </div>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              <FaTimes className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <button
+              onClick={() => onComplete(habit.id)}
+              className="btn-primary flex items-center justify-center gap-2"
+            >
+              <FaCheck /> Complete Today
+            </button>
+            <button
+              onClick={() => onEdit(habit)}
+              className="btn-secondary flex items-center justify-center gap-2"
+            >
+              <FaEdit /> Edit Habit
+            </button>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="card text-center">
+              <h3 className="text-sm text-gray-500 dark:text-gray-400">Current Streak</h3>
+              <div className="text-2xl font-bold flex items-center justify-center gap-1">
+                <FaFire className="text-orange-500" />
+                {currentStreak}
+              </div>
+            </div>
+            <div className="card text-center">
+              <h3 className="text-sm text-gray-500 dark:text-gray-400">Best Streak</h3>
+              <div className="text-2xl font-bold">{bestStreak}</div>
+            </div>
+            <div className="card text-center">
+              <h3 className="text-sm text-gray-500 dark:text-gray-400">Completion Rate</h3>
+              <div className="text-2xl font-bold">{completionRate}%</div>
+            </div>
+          </div>
+
+          {/* Next Milestone */}
+          {nextMilestone && (
+            <div className="card mb-6">
+              <h3 className="text-sm font-medium mb-2">Next Milestone: {nextMilestone.label}</h3>
+              <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progressToNextMilestone}%` }}
+                  transition={{ duration: 1, ease: "easeOut" }}
+                  className="h-full rounded-full"
+                  style={{ backgroundColor: habit.color }}
+                />
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                {currentStreak} / {nextMilestone.value} days
+              </p>
+            </div>
+          )}
+
+          {/* Recent History */}
+          <div className="card">
+            <h3 className="font-medium mb-4">Recent History</h3>
+            <div className="space-y-3">
+              {history.slice(0, 7).map((entry, index) => (
+                <div 
+                  key={index}
+                  className="flex items-center justify-between p-2 rounded-lg border border-gray-200 dark:border-gray-700"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{habit.icon}</span>
+                    <div>
+                      <p className="font-medium">
+                        {new Date(entry.date).toLocaleDateString('en-US', { 
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </p>
+                      {entry.completed_at && (
+                        <p className="text-sm text-gray-500">
+                          {new Date(entry.completed_at).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {entry.completed ? (
+                      <span className="px-2 py-1 rounded-full text-sm bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        Completed
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => onUndo(habit.id, entry.date)}
+                        className="btn-secondary p-1"
+                      >
+                        <FaUndo className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Delete Button */}
+          <button
+            onClick={() => onDelete(habit.id)}
+            className="btn-danger w-full mt-6 flex items-center justify-center gap-2"
+          >
+            <FaTrash /> Delete Habit
+          </button>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+const Analytics = () => {
+  const { habits, fetchHabits, getHabitHistory } = useSupabaseStore();
+  const [allHistory, setAllHistory] = useState<Record<string, HabitHistory[]>>({});
+  const [loading, setLoading] = useState(true);
+  const [selectedHabit, setSelectedHabit] = useState<string | 'all'>('all');
+  const [widgets, setWidgets] = useState<Widget[]>([
+    { id: '1', type: 'weeklyProgress', size: 'large', visible: true, pinned: false },
+    { id: '2', type: 'categoryStats', size: 'medium', visible: true, pinned: false },
+    { id: '3', type: 'streak', size: 'small', visible: true, pinned: false },
+    { id: '4', type: 'habitCalendar', size: 'large', visible: true, pinned: false },
+    { id: '5', type: 'timeAnalysis', size: 'medium', visible: true, pinned: false },
+    { id: '6', type: 'consistencyScore', size: 'medium', visible: true, pinned: false },
+  ]);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedHabitForDetail, setSelectedHabitForDetail] = useState<Habit | null>(null);
+
+  // Date range state
+  const [rangeStart, setRangeStart] = useState(() => {
+    const d = new Date();
+    d.setDate(1);
+    return d.toISOString().split('T')[0];
+  });
+  const [rangeEnd, setRangeEnd] = useState(() => {
+    const d = new Date();
+    return d.toISOString().split('T')[0];
+  });
+
+  // Helper: filter history by date range
+  const filterHistory = (history: HabitHistory[]) =>
+    history.filter(h => h.date >= rangeStart && h.date <= rangeEnd);
+
+  useEffect(() => {
+    fetchHabits();
+    // eslint-disable-next-line
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchAllHistory = async () => {
+      setLoading(true);
+      const historyMap: Record<string, HabitHistory[]> = {};
+      for (const habit of habits) {
+        historyMap[habit.id] = await getHabitHistory(habit.id);
+      }
+      if (mounted) setAllHistory(historyMap);
+      setLoading(false);
+    };
+    if (habits.length > 0) fetchAllHistory();
+    return () => { mounted = false; };
+  }, [habits, getHabitHistory]);
+
+  const triggerConfetti = useConfetti();
+
+  // --- Consistency Score Data ---
+  const getNumDaysInRange = () => {
+    const start = new Date(rangeStart);
+    const end = new Date(rangeEnd);
+    let days = 0;
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      days++;
+    }
+    return days;
+  };
+  const numDaysInRange = getNumDaysInRange();
+  const consistencyScores = habits.map(habit => {
+    const history = filterHistory(allHistory[habit.id] || []);
+    const completedDays = new Set(history.filter(h => h.completed).map(h => h.date)).size;
+    const score = numDaysInRange > 0 ? Math.round((completedDays / numDaysInRange) * 100) : 0;
+    return { habit, score };
+  });
+
+  useEffect(() => {
+    // Trigger confetti if any habit's consistency score >= 90%
+    if (consistencyScores.some(({ score }) => score >= 90)) {
+      triggerConfetti({ particleCount: 150, spread: 100 });
+    }
+  }, [consistencyScores]);
+
+  if (loading) {
+    // Show skeleton loaders for widgets
+    return (
+      <div className="min-h-screen p-4 md:p-6">
+        <header className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-4">
+            <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+            <div className="h-8 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+            <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+          </div>
+        </header>
+        <div className="card mb-6 animate-pulse h-32" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="card animate-pulse h-64" />
+          ))}
+        </div>
       </div>
     );
   }
-  return null;
-};
 
-// Custom label for pie chart
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-  return (
-    <text 
-      x={x} 
-      y={y} 
-      fill="white" 
-      textAnchor={x > cx ? 'start' : 'end'} 
-      dominantBaseline="central"
-      fontSize="12"
-    >
-      {`${(percent * 100).toFixed(0)}%`}
-    </text>
-  );
-};
-
-// Simple Monthly Calendar component
-const MonthlyCalendarView = ({ habit, month, year }: { habit: any, month: number, year: number }) => {
-  // Get first day of month (0 = Sunday) and number of days in month
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  
-  // Create calendar days array including empty spaces for the first week
-  const days = [];
-  
-  // Add empty cells for days before first day of month
-  for (let i = 0; i < firstDay; i++) {
-    days.push({ empty: true });
-  }
-  
-  // Add days of the month
-  for (let i = 1; i <= daysInMonth; i++) {
-    const date = new Date(year, month, i);
-    const dateStr = date.toISOString().split('T')[0];
-    
-    // Check if this date has a history entry
-    const historyEntry = habit.history.find((h: any) => h.date === dateStr);
-    const percentage = historyEntry ? Math.min(historyEntry.count / habit.target, 1) : 0;
-    
-    days.push({
-      day: i,
-      date: dateStr,
-      completed: !!historyEntry?.completed,
-      percentage: percentage
-    });
-  }
-
-  return (
-    <div className="w-full">
-      <h3 className="text-center font-medium mb-4">
-        {MONTHS[month]} {year}
-      </h3>
-      <div className="grid grid-cols-7 gap-1">
-        {/* Day headers */}
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-          <div key={`header-${i}`} className="text-center text-sm font-medium py-1 text-gray-500">
-            {d}
-          </div>
-        ))}
-        
-        {/* Calendar days */}
-        {days.map((day: any, i) => (
-          <div 
-            key={`day-${i}`} 
-            className={`aspect-square flex items-center justify-center border rounded-md ${
-              day.empty ? 'border-transparent' : 'border-gray-200 dark:border-gray-700'
-            }`}
-          >
-            {!day.empty && (
-              <div className="relative w-full h-full flex items-center justify-center">
-                <span className="z-10 text-sm">{day.day}</span>
-                {(day.completed || (day.percentage && day.percentage > 0)) && (
-                  <div 
-                    className="absolute inset-0 rounded-md" 
-                    style={{ 
-                      backgroundColor: habit.color,
-                      opacity: 0.2 + ((day.percentage || 0) * 0.8)
-                    }}
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// Habit Analysis Component
-const HabitAnalysis = ({ habit }: { habit: any }) => {
-  const streakData = {
-    current: habit.streak,
-    best: habit.history.length > 0 ? Math.max(habit.streak, 5) : 0, // Mock data (would calculate real best streak)
-    average: habit.history.length > 0 ? Math.round(habit.streak * 0.7) : 0 // Mock data
-  };
-  
-  // Calculate completion rate
-  const completionRate = habit.history.length > 0 
-    ? Math.round((habit.history.filter((h: any) => h.completed).length / habit.history.length) * 100)
-    : 0;
-  
-  // Calculate month-by-month data (mock data for now)
-  const getMonthlyData = () => {
-    return MONTHS.map((month, index) => {
-      // Create a counter for completions in this month
-      const completions = habit.history.filter((entry: any) => {
-        const date = new Date(entry.date);
-        return date.getMonth() === index && entry.completed;
-      }).length;
-      
-      return {
-        month,
-        completions,
-        target: 20 // Mock target
-      };
-    });
-  };
-  
-  const monthlyData = getMonthlyData();
-  
-  // Calculate total count for count-based habits
-  const totalCount = habit.countType === 'count' ? 
-    habit.history.reduce((sum: number, entry: any) => sum + entry.count, 0) : 
-    habit.history.length;
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="card flex flex-col items-center">
-          <h3 className="font-medium text-gray-500 mb-1">Current Streak</h3>
-          <div className="flex items-center">
-            <FaFire className="text-orange-500 mr-2" />
-            <span className="text-3xl font-bold">{streakData.current}</span>
-          </div>
-          <p className="text-sm text-gray-500">days</p>
-        </div>
-        
-        <div className="card flex flex-col items-center">
-          <h3 className="font-medium text-gray-500 mb-1">Best Streak</h3>
-          <div className="flex items-center">
-            <FaFire className="text-orange-500 mr-2" />
-            <span className="text-3xl font-bold">{streakData.best}</span>
-          </div>
-          <p className="text-sm text-gray-500">days</p>
-        </div>
-        
-        <div className="card flex flex-col items-center">
-          <h3 className="font-medium text-gray-500 mb-1">Completion Rate</h3>
-          <div className="text-3xl font-bold">{completionRate}%</div>
-          <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full mt-2">
-            <div 
-              className="h-full rounded-full" 
-              style={{ width: `${completionRate}%`, backgroundColor: habit.color }}
-            />
-          </div>
-        </div>
-      </div>
-      
-      {habit.countType === 'count' && (
-        <div className="card">
-          <h3 className="font-medium mb-3">Total Progress</h3>
-          <div className="flex items-end gap-4">
-            <div className="text-4xl font-bold">{totalCount}</div>
-            <div className="text-xl text-gray-500 mb-1">
-              {habit.countUnit}
-            </div>
-          </div>
-          <p className="text-gray-500 text-sm mt-2">
-            Total {habit.name.toLowerCase()} tracked since you started
-          </p>
-        </div>
-      )}
-      
-      <div className="card">
-        <h3 className="font-medium mb-4">Monthly Completion</h3>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar 
-                dataKey="completions" 
-                name="Completions" 
-                fill={habit.color} 
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-      
-      <div className="card">
-        <h3 className="font-medium mb-4">Monthly Calendar</h3>
-        <MonthlyCalendarView 
-          habit={habit}
-          month={new Date().getMonth()}
-          year={new Date().getFullYear()}
-        />
-      </div>
-    </div>
-  );
-};
-
-type ChartType = 'overview' | 'categories' | 'streak' | 'calendar' | 'time' | 'analysis';
-
-const Analytics = () => {
-  const { habits, getCategoryStats } = useHabitStore();
-  const [selectedHabit, setSelectedHabit] = useState<string | 'all'>('all');
-  const [activeChart, setActiveChart] = useState<ChartType>('overview');
-  const [widgets, setWidgets] = useState([
-    { id: '1', type: 'weeklyProgress', size: 'large' as const },
-    { id: '2', type: 'categoryStats', size: 'medium' as const },
-    { id: '3', type: 'streak', size: 'small' as const },
-    { id: '4', type: 'habitCalendar', size: 'large' as const },
-  ]);
-
-  // Get weekly data
-  const weeklyData = DAYS.map((day, index) => {
-    const dayData = habits
-      .filter((habit) => selectedHabit === 'all' || habit.id === selectedHabit)
-      .reduce(
-        (acc, habit) => {
-          const todayHistory = habit.history.filter((h) => {
-            const date = new Date(h.date);
-            return date.getDay() === index;
-          });
-          return {
-            day,
-            completed: acc.completed + todayHistory.filter((h) => h.completed).length,
-            total: acc.total + todayHistory.length,
-          };
-        },
-        { day, completed: 0, total: 0 }
-      );
-    return dayData;
-  });
-
-  // Get category stats for pie chart
-  const categoryStats = getCategoryStats();
-  const pieData = Object.entries(categoryStats)
-    .map(([name, value]) => ({ name, value }))
-    .filter(item => item.value > 0);
-  
-  // Get longest streak
-  const longestStreak = habits
-    .filter((habit) => selectedHabit === 'all' || habit.id === selectedHabit)
-    .reduce((max, habit) => Math.max(max, habit.streak), 0);
-
-  // Get completion time stats (mock data - would be real data in a full implementation)
-  const timeData = [
-    { name: 'Morning', value: 65 },
-    { name: 'Afternoon', value: 45 },
-    { name: 'Evening', value: 80 },
-    { name: 'Night', value: 30 },
-  ];
-
-  // Get habit comparison data for radar chart
-  const habitComparisonData = habits.slice(0, 5).map(habit => {
-    const completionRate = habit.history.length > 0 
-      ? habit.history.filter(h => h.completed).length / habit.history.length * 100 
-      : 0;
-    
-    return {
-      habit: habit.name,
-      completionRate: Math.round(completionRate),
-      streak: habit.streak,
-      consistency: Math.round(Math.random() * 100), // Mock data
-    };
-  });
-  
   // Handle widget resize
-  const handleWidgetResize = (id: string, size: 'small' | 'medium' | 'large') => {
-    setWidgets(widgets.map(widget => 
-      widget.id === id ? { ...widget, size } : widget
-    ));
+  const handleWidgetResize = (id: string, size: WidgetSize) => {
+    setWidgets(widgets.map(w => w.id === id ? { ...w, size } : w));
   };
 
-  const selectedHabitObj = selectedHabit !== 'all' 
-    ? habits.find(h => h.id === selectedHabit)
-    : undefined;
+  const handleWidgetVisibility = (id: string) => {
+    setWidgets(widgets.map(w => w.id === id ? { ...w, visible: !w.visible } : w));
+  };
+
+  const handleWidgetPin = (id: string) => {
+    setWidgets(widgets.map(w => w.id === id ? { ...w, pinned: !w.pinned } : w));
+  };
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const items = Array.from(widgets);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setWidgets(items);
+  };
+
+  const { toggleDarkMode, accentColor, setAccentColor } = useContext(ThemeContext);
 
   return (
-    <div className="min-h-screen p-4 md:p-6">
-      <header className="flex items-center justify-between mb-8">
-        <div className="flex items-center space-x-4">
-          <Link to="/dashboard" className="btn-secondary p-2">
-            <FaArrowLeft className="w-5 h-5" />
-          </Link>
-          <h1 className="text-3xl font-bold">Analytics</h1>
-        </div>
-        <select
-          value={selectedHabit}
-          onChange={(e) => setSelectedHabit(e.target.value)}
-          className="input max-w-xs"
-        >
-          <option value="all">All Habits</option>
-          {habits.map((habit) => (
-            <option key={habit.id} value={habit.id}>
-              {habit.icon} {habit.name}
-            </option>
-          ))}
-        </select>
-      </header>
-
-      {/* Chart type tabs */}
-      <div className="flex flex-wrap border-b mb-6 overflow-x-auto">
-        <button
-          className={`tab ${activeChart === 'overview' ? 'active' : ''}`}
-          onClick={() => setActiveChart('overview')}
-        >
-          <FaChartBar className="mr-2" /> Overview
-        </button>
-        {selectedHabit !== 'all' && (
-          <button
-            className={`tab ${activeChart === 'analysis' ? 'active' : ''}`}
-            onClick={() => setActiveChart('analysis')}
-          >
-            <FaList className="mr-2" /> Analysis
-          </button>
-        )}
-        <button
-          className={`tab ${activeChart === 'categories' ? 'active' : ''}`}
-          onClick={() => setActiveChart('categories')}
-        >
-          <FaChartPie className="mr-2" /> Categories
-        </button>
-        <button
-          className={`tab ${activeChart === 'streak' ? 'active' : ''}`}
-          onClick={() => setActiveChart('streak')}
-        >
-          <FaChartLine className="mr-2" /> Streak
-        </button>
-        <button
-          className={`tab ${activeChart === 'calendar' ? 'active' : ''}`}
-          onClick={() => setActiveChart('calendar')}
-        >
-          <FaCalendarAlt className="mr-2" /> Calendar
-        </button>
-        <button
-          className={`tab ${activeChart === 'time' ? 'active' : ''}`}
-          onClick={() => setActiveChart('time')}
-        >
-          <FaChartLine className="mr-2" /> Time Analysis
-        </button>
-      </div>
-
-      {/* If analysis is selected and we have a specific habit */}
-      {activeChart === 'analysis' && selectedHabitObj && (
-        <HabitAnalysis habit={selectedHabitObj} />
-      )}
-
-      {/* Dashboard widgets for other chart types */}
-      {activeChart !== 'analysis' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          {/* Widget 1: Weekly Progress */}
-          <HabitWidget
-            title="Weekly Progress"
-            size="large"
-            color={selectedHabitObj?.color}
-            onResize={(size) => handleWidgetResize('1', size)}
-          >
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklyData}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                  <XAxis dataKey="day" />
-                  <YAxis />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend />
-                  <Bar
-                    name="Completed"
-                    dataKey="completed"
-                    fill={selectedHabitObj?.color || "#3B82F6"}
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </HabitWidget>
-
-          {/* Widget 2: Habit Categories */}
-          <HabitWidget
-            title="Habit Categories"
-            size="medium"
-            onResize={(size) => handleWidgetResize('2', size)}
-          >
-            <div className="h-60">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={renderCustomizedLabel}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {pieData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend layout="horizontal" verticalAlign="bottom" align="center" />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </HabitWidget>
-
-          {/* Widget 3: Streak */}
-          <HabitWidget
-            title="Longest Streak"
-            size="small"
-            onResize={(size) => handleWidgetResize('3', size)}
-          >
-            <div className="flex flex-col items-center justify-center h-40">
-              <span className="text-4xl mb-2">🏆</span>
-              <span className="text-4xl font-bold text-primary-light dark:text-primary-dark">
-                {longestStreak}
-              </span>
-              <span className="text-lg text-gray-600 dark:text-gray-400">days</span>
-            </div>
-          </HabitWidget>
-
-          {/* Widget 4: HabitKit-style Calendar */}
-          {selectedHabitObj && (
-            <HabitWidget
-              title={`Calendar: ${selectedHabitObj.name}`}
-              size="large"
-              color={selectedHabitObj.color}
-              onResize={(size) => handleWidgetResize('4', size)}
+    <ThemeProvider>
+      <div className="min-h-screen p-4 md:p-6">
+        <header className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-4">
+            <Link to="/dashboard" className="btn-secondary p-2">
+              <FaArrowLeft className="w-5 h-5" />
+            </Link>
+            <h1 className="text-3xl font-bold">Analytics</h1>
+          </div>
+          <div className="flex items-center gap-4">
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleDarkMode}
+              className="btn-secondary p-2"
             >
-              <HabitCalendar habit={selectedHabitObj} year={new Date().getFullYear()} color={selectedHabitObj.color} />
-            </HabitWidget>
-          )}
+              <FaMoon />
+            </button>
 
-          {/* Widget 5: Time Analysis */}
-          <HabitWidget
-            title="Completion Time"
-            size="medium"
-          >
-            <div className="h-60">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadialBarChart
-                  cx="50%"
-                  cy="50%"
-                  innerRadius="10%"
-                  outerRadius="80%"
-                  data={timeData}
-                  startAngle={90}
-                  endAngle={-270}
-                >
-                  <RadialBar
-                    label={{ position: 'insideStart', fill: '#fff' }}
-                    background
-                    dataKey="value"
+            {/* Accent Color Picker */}
+            <input
+              type="color"
+              value={accentColor}
+              onChange={(e) => setAccentColor(e.target.value)}
+              className="w-8 h-8 rounded cursor-pointer"
+              title="Choose Accent Color"
+            />
+
+            {/* Habit Selector */}
+            <select
+              value={selectedHabit}
+              onChange={(e) => {
+                setSelectedHabit(e.target.value);
+                if (e.target.value !== 'all') {
+                  const habit = habits.find(h => h.id === e.target.value);
+                  if (habit) setSelectedHabitForDetail(habit);
+                }
+              }}
+              className="input max-w-xs"
+            >
+              <option value="all">All Habits</option>
+              {habits.map((habit) => (
+                <option key={habit.id} value={habit.id}>
+                  {habit.icon} {habit.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </header>
+
+        {/* Date Range Filter */}
+        <div className="card mb-6">
+          <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+            <FaCalendarAlt /> Date Range
+          </h2>
+          <DateRangePicker
+            startDate={rangeStart}
+            endDate={rangeEnd}
+            onStartDateChange={setRangeStart}
+            onEndDateChange={setRangeEnd}
+          />
+        </div>
+
+        {/* Customizable Dashboard */}
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="dashboard">
+            {(provided: DroppableProvided) => (
+              <div
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+              >
+                {widgets.map((widget) => (
+                  <CustomizableWidget
+                    key={widget.id}
+                    widget={widget}
+                    onResize={(size) => handleWidgetResize(widget.id, size)}
+                    onToggleVisibility={() => handleWidgetVisibility(widget.id)}
+                    onTogglePin={() => handleWidgetPin(widget.id)}
                   >
-                    {timeData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </RadialBar>
-                  <Legend iconSize={10} layout="vertical" verticalAlign="middle" align="right" />
-                  <Tooltip content={<CustomTooltip />} />
-                </RadialBarChart>
-              </ResponsiveContainer>
-            </div>
-          </HabitWidget>
-
-          {/* Widget 6: Habit Comparison */}
-          <HabitWidget
-            title="Habit Comparison"
-            size="medium"
-          >
-            {habitComparisonData.length > 0 ? (
-              <div className="h-60">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart cx="50%" cy="50%" outerRadius="80%" data={habitComparisonData}>
-                    <PolarGrid />
-                    <PolarAngleAxis dataKey="habit" />
-                    <PolarRadiusAxis />
-                    <Radar name="Completion Rate" dataKey="completionRate" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
-                    <Radar name="Streak" dataKey="streak" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-60 text-gray-400">
-                <p>Add more habits to see comparisons</p>
+                    {widget.type === 'weeklyProgress' && (
+                      <div className={`h-${widget.size === 'large' ? '64' : widget.size === 'medium' ? '48' : '32'}`}>
+                        {/* Weekly Progress Chart */}
+                      </div>
+                    )}
+                    {/* Add other widget types here */}
+                  </CustomizableWidget>
+                ))}
+                {provided.placeholder}
               </div>
             )}
-          </HabitWidget>
+          </Droppable>
+        </DragDropContext>
 
-          {/* Month Calendar Widget (for specific habit) */}
-          {selectedHabitObj && activeChart === 'calendar' && (
-            <HabitWidget
-              title="Monthly View"
-              size="medium"
-              color={selectedHabitObj.color}
-            >
-              <MonthlyCalendarView 
-                habit={selectedHabitObj}
-                month={new Date().getMonth()}
-                year={new Date().getFullYear()}
-              />
-            </HabitWidget>
-          )}
-        </div>
-      )}
+        {/* Add Widget Button */}
+        <button className="fixed bottom-20 right-6 btn-primary rounded-full p-4 shadow-lg">
+          <FaPlus className="w-6 h-6" />
+        </button>
 
-      {/* Add Widget Button */}
-      <button className="fixed bottom-20 right-6 btn-primary rounded-full p-4 shadow-lg">
-        <FaPlus className="w-6 h-6" />
-      </button>
-    </div>
+        {/* Add DailyDetailsModal */}
+        <DailyDetailsModal
+          isOpen={!!selectedDate}
+          onClose={() => setSelectedDate(null)}
+          date={selectedDate || ''}
+          habits={habits}
+          history={allHistory}
+        />
+
+        {/* Add HabitDetailDrawer */}
+        {selectedHabitForDetail && (
+          <HabitDetailDrawer
+            isOpen={!!selectedHabitForDetail}
+            onClose={() => setSelectedHabitForDetail(null)}
+            habit={selectedHabitForDetail}
+            history={allHistory[selectedHabitForDetail.id] || []}
+            onEdit={() => {}}
+            onDelete={() => {}}
+            onComplete={() => {}}
+            onUndo={() => {}}
+          />
+        )}
+      </div>
+    </ThemeProvider>
   );
 };
 

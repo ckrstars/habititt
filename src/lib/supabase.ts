@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -30,9 +30,12 @@ export type Habit = {
 export type HabitHistory = {
   id: string;
   habit_id: string;
+  user_id: string;
   date: string;
-  count: number;
   completed: boolean;
-  time_of_completion?: string;
+  count: number;
+  streak: number;
+  completed_at: string | null;
   created_at: string;
+  updated_at: string;
 }; 

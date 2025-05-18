@@ -1,8 +1,7 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,jsx,ts,tsx}",
   ],
   darkMode: 'class',
   theme: {
@@ -11,13 +10,14 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       colors: {
-        // Light theme colors
-        'primary-light': '#3B82F6',
+        'accent-light': 'var(--accent-color)',
+        'accent-dark': 'var(--accent-color)',
+        'primary-light': 'var(--accent-color)',
+        'primary-dark': 'var(--accent-color)',
         'surface-light': '#ffffff',
         'text-light': '#1f2937',
         
         // Dark theme colors
-        'primary-dark': '#14B8A6',
         'surface-dark': '#121212',
         'text-dark': '#e0e0e0',
       },

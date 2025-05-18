@@ -11,11 +11,13 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
   const { signIn, signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     setLoading(true);
 
     try {
@@ -23,6 +25,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         await signIn(email, password);
       } else {
         await signUp(email, password);
+        setSuccess('Check your email to verify your account before logging in.');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -40,6 +43,13 @@ export default function AuthForm({ mode }: AuthFormProps) {
       <h2 className="text-2xl font-bold text-center mb-6">
         {mode === 'login' ? 'Welcome Back' : 'Create Account'}
       </h2>
+
+      {success && (
+        <div className="text-green-600 text-sm text-center mb-2">{success}</div>
+      )}
+      {error && (
+        <div className="text-red-500 text-sm text-center mb-2">{error}</div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -69,10 +79,6 @@ export default function AuthForm({ mode }: AuthFormProps) {
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-light focus:ring-primary-light dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           />
         </div>
-
-        {error && (
-          <div className="text-red-500 text-sm text-center">{error}</div>
-        )}
 
         <button
           type="submit"

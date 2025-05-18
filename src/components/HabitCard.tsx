@@ -1,42 +1,90 @@
-import { motion } from 'framer-motion';
-import { FaMinus, FaPlus, FaCheck, FaBell, FaEllipsisH, FaUndo } from 'react-icons/fa';
-import { Habit } from '../store/habitStore';
+import { useEffect, useState, useRef } from 'react';
+import { motion, useAnimation } from 'framer-motion';
+import { FaMinus, FaPlus, FaCheck, FaBell, FaEllipsisH, FaUndo, FaFire, FaTrophy } from 'react-icons/fa';
+import { Habit, HabitHistory } from '../lib/supabase';
+import useSupabaseStore from '../store/supabaseStore';
 
 interface HabitCardProps {
   habit: Habit;
+  onEdit: () => void;
+  onDelete: () => void;
   onIncrement: () => void;
   onDecrement: () => void;
   onComplete: () => void;
-  onEdit: () => void;
-  onUndoComplete?: () => void;
+  onUndoComplete: () => void;
 }
 
-// Function to calculate gradient color based on percentage
-const getGradientColor = (baseColor: string, percentage: number): string => {
-  if (percentage <= 0) return '';
-  
-  // Convert hex to RGB
-  const hexToRgb = (hex: string) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : { r: 0, g: 0, b: 0 };
-  };
-  
-  const rgb = hexToRgb(baseColor);
-  
-  // Create a gradient effect
-  const intensity = Math.max(0.2, percentage);
-  
-  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${intensity})`;
-};
-
-const HabitCard = ({ habit, onIncrement, onDecrement, onComplete, onEdit, onUndoComplete }: HabitCardProps) => {
+const HabitCard = ({ habit, onEdit, onDelete, onIncrement, onDecrement, onComplete, onUndoComplete }: HabitCardProps) => {
   const progress = (habit.progress / habit.target) * 100;
   const isComplete = habit.progress >= habit.target;
-  
+  const [history, setHistory] = useState<HabitHistory[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const getHabitHistory = useSupabaseStore(s => s.getHabitHistory);
+  const streakControls = useAnimation();
+  const prevStreak = useRef(0);
+
+  useEffect(() => {
+    let mounted = true;
+    setLoadingHistory(true);
+    getHabitHistory(habit.id).then(data => {
+      if (mounted) setHistory(data);
+      setLoadingHistory(false);
+    });
+    return () => { mounted = false; };
+  }, [habit.id, getHabitHistory]);
+
+  // Streak calculation (consecutive days with completed=true)
+  const today = new Date().toISOString().split('T')[0];
+  let streak = 0;
+  let date = new Date();
+  for (let i = 0; i < 365; i++) {
+    const dateStr = date.toISOString().split('T')[0];
+    const entry = history.find(h => h.date === dateStr && h.completed);
+    if (entry) {
+      streak++;
+      date.setDate(date.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  // Longest streak calculation
+  let longestStreak = 0;
+  let currentStreak = 0;
+  let streakDate = new Date();
+  for (let i = 0; i < 365; i++) {
+    const dateStr = streakDate.toISOString().split('T')[0];
+    const entry = history.find(h => h.date === dateStr && h.completed);
+    if (entry) {
+      currentStreak++;
+      if (currentStreak > longestStreak) longestStreak = currentStreak;
+    } else {
+      currentStreak = 0;
+    }
+    streakDate.setDate(streakDate.getDate() - 1);
+  }
+
+  // Animate streak increases
+  useEffect(() => {
+    if (streak > prevStreak.current) {
+      streakControls.start({ scale: [1, 1.2, 1] });
+    }
+    prevStreak.current = streak;
+  }, [streak, streakControls]);
+
+  // Calendar grid for last 35 days
+  const gridCells = [];
+  const now = new Date();
+  for (let i = 34; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(now.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const entry = history.find(h => h.date === dateStr);
+    const filled = entry && entry.completed;
+    const isToday = dateStr === today;
+    gridCells.push({ date: dateStr, filled, isToday, count: entry?.count });
+  }
+
   // Get category badge style based on category
   const getCategoryBadgeClass = () => {
     switch (habit.category) {
@@ -56,41 +104,6 @@ const HabitCard = ({ habit, onIncrement, onDecrement, onComplete, onEdit, onUndo
         return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
     }
   };
-
-  // Get recent habit history for the grid visualization
-  const getRecentHistoryGrid = () => {
-    // Get last 35 days (5 weeks * 7 days) for the grid
-    const cells = [];
-    const today = new Date();
-    
-    for (let i = 34; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(today.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-      
-      // Check if we have history for this date
-      const historyEntry = habit.history.find(h => h.date === dateStr);
-      const percentage = historyEntry ? Math.min(historyEntry.count / habit.target, 1) : 0;
-      const hasActivity = percentage > 0;
-      
-      cells.push({
-        date: dateStr,
-        hasActivity,
-        percentage
-      });
-    }
-    
-    return cells;
-  };
-
-  // Get compact grid visualization data
-  const gridData = getRecentHistoryGrid();
-
-  // Check if completed today
-  const today = new Date().toISOString().split('T')[0];
-  const completedToday = habit.history.some(entry => 
-    entry.date === today && entry.completed
-  );
 
   return (
     <motion.div
@@ -127,12 +140,12 @@ const HabitCard = ({ habit, onIncrement, onDecrement, onComplete, onEdit, onUndo
         </div>
         
         <div className="flex items-center">
-          {habit.reminderEnabled && (
+          {habit.reminder_enabled && (
             <motion.span 
               className="mr-2 text-gray-500 dark:text-gray-400"
               whileHover={{ scale: 1.2, rotate: 15 }}
               transition={{ duration: 0.2 }}
-              title={`Reminder: ${habit.reminderTime || 'enabled'}`}
+              title={`Reminder: ${habit.reminder_time || 'enabled'}`}
             >
               <FaBell size={14} />
             </motion.span>
@@ -146,6 +159,15 @@ const HabitCard = ({ habit, onIncrement, onDecrement, onComplete, onEdit, onUndo
             transition={{ duration: 0.2 }}
           >
             <FaEllipsisH size={14} />
+          </motion.button>
+          <motion.button
+            className="ml-2 p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900 rounded-full"
+            onClick={onDelete}
+            aria-label="Delete habit"
+            whileHover={{ scale: 1.1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <FaUndo size={14} />
           </motion.button>
         </div>
       </div>
@@ -174,7 +196,7 @@ const HabitCard = ({ habit, onIncrement, onDecrement, onComplete, onEdit, onUndo
 
       {/* Count-based or completion-based controls */}
       <div className="flex items-center justify-between">
-        {habit.countType === 'count' ? (
+        {habit.count_type === 'count' ? (
           <div className="flex items-center space-x-3">
             <motion.button
               onClick={onDecrement}
@@ -190,16 +212,8 @@ const HabitCard = ({ habit, onIncrement, onDecrement, onComplete, onEdit, onUndo
             >
               <FaMinus className="w-4 h-4" />
             </motion.button>
-            
-            <motion.div 
-              className="flex items-center font-medium"
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 0.3, type: 'spring' }}
-            >
-              <span className="text-xl mr-1">{habit.progress}</span>
-              <span className="text-gray-500 dark:text-gray-400 text-sm">/ {habit.target} {habit.countUnit}</span>
-            </motion.div>
-            
+            <span className="text-xl mr-1">{habit.progress}</span>
+            <span className="text-gray-500 dark:text-gray-400 text-sm">/ {habit.target} {habit.count_unit}</span>
             <motion.button
               onClick={onIncrement}
               disabled={isComplete}
@@ -214,76 +228,80 @@ const HabitCard = ({ habit, onIncrement, onDecrement, onComplete, onEdit, onUndo
             >
               <FaPlus className="w-4 h-4" />
             </motion.button>
+            {isComplete ? (
+              <motion.button
+                onClick={onUndoComplete}
+                className="btn-primary p-2.5 group relative rounded-full"
+                title="Undo completion"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                style={{ backgroundColor: '#10b981' }}
+              >
+                <FaCheck className="w-4 h-4 group-hover:opacity-0 transition-opacity" />
+                <FaUndo className="w-4 h-4 absolute inset-0 m-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+              </motion.button>
+            ) : (
+              <motion.button
+                onClick={onComplete}
+                className="btn-primary p-2.5 rounded-full"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                style={{ backgroundColor: habit.color }}
+              >
+                <FaCheck className="w-4 h-4" />
+              </motion.button>
+            )}
           </div>
         ) : (
-          <div className="flex items-center">
-            <span className="font-medium">
-              Complete Today
-            </span>
+          <div className="flex items-center space-x-3">
+            <span className="text-xl mr-1">{habit.progress}</span>
+            <span className="text-gray-500 dark:text-gray-400 text-sm">/ {habit.target}</span>
+            {isComplete ? (
+              <motion.button
+                onClick={onUndoComplete}
+                className="btn-primary p-2.5 group relative rounded-full"
+                title="Undo completion"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                style={{ backgroundColor: '#10b981' }}
+              >
+                <FaCheck className="w-4 h-4 group-hover:opacity-0 transition-opacity" />
+                <FaUndo className="w-4 h-4 absolute inset-0 m-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+              </motion.button>
+            ) : (
+              <motion.button
+                onClick={onComplete}
+                className="btn-primary p-2.5 rounded-full"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                style={{ backgroundColor: habit.color }}
+              >
+                <FaCheck className="w-4 h-4" />
+              </motion.button>
+            )}
           </div>
-        )}
-
-        {completedToday && onUndoComplete ? (
-          <motion.button
-            onClick={onUndoComplete}
-            className="btn-primary p-2.5 group relative rounded-full"
-            title="Undo completion"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            style={{ 
-              backgroundColor: '#10b981',
-            }}
-          >
-            <FaCheck className="w-4 h-4 group-hover:opacity-0 transition-opacity" />
-            <FaUndo className="w-4 h-4 absolute inset-0 m-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-          </motion.button>
-        ) : (
-          <motion.button
-            onClick={onComplete}
-            disabled={isComplete && !onUndoComplete}
-            className="btn-primary p-2.5 rounded-full"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            style={{ 
-              backgroundColor: isComplete ? '#10b981' : habit.color,
-              opacity: isComplete ? 0.8 : 1
-            }}
-          >
-            <FaCheck className="w-4 h-4" />
-          </motion.button>
         )}
       </div>
-
       {/* Streak indicator */}
-      {habit.streak > 0 && (
-        <motion.div 
-          className="mt-4 text-sm text-gray-600 dark:text-gray-400 flex items-center"
-          animate={{ scale: [1, 1.05, 1] }}
-          transition={{ duration: 2, repeat: Infinity, repeatType: 'reverse' }}
-        >
-          <span className="mr-1">🔥</span>
-          <span>{habit.streak} day streak!</span>
-        </motion.div>
-      )}
-      
-      {/* HabitKit-style grid preview */}
-      <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-        <div className="habit-grid">
-          {gridData.map((cell, i) => (
-            <div 
-              key={i}
-              className={`calendar-grid-cell ${cell.hasActivity ? 'filled' : 'empty'}`}
-              style={cell.hasActivity ? { 
-                backgroundColor: getGradientColor(habit.color, cell.percentage),
-                transform: cell.percentage >= 0.9 ? 'scale(1.1)' : 'scale(1)'
-              } : {}}
-              title={`${cell.date}: ${
-                habit.history.find(h => h.date === cell.date)?.count || 0
-              }/${habit.target} ${habit.countUnit || ''}`}
-            />
-          ))}
-        </div>
+      <motion.div animate={streakControls} className="mt-3 flex items-center gap-2 text-sm text-orange-500 dark:text-orange-300">
+        <FaFire className="inline-block" />
+        <span>{streak} day streak</span>
+        {longestStreak > 0 && (
+          <span className="ml-2 flex items-center gap-1 text-yellow-500 dark:text-yellow-300"><FaTrophy /> {longestStreak} best</span>
+        )}
+      </motion.div>
+      {/* Calendar grid visualization */}
+      <div className="mt-3 grid grid-cols-7 gap-1">
+        {gridCells.map((cell) => (
+          <div
+            key={cell.date}
+            title={`${cell.date}${cell.filled ? ' ✔' : ''}${habit.count_type === 'count' && cell.count ? ` (${cell.count})` : ''}${cell.isToday ? ' (Today)' : ''}`}
+            className={`w-4 h-4 rounded ${cell.filled ? 'bg-primary-light dark:bg-primary-dark' : 'bg-gray-200 dark:bg-gray-700'} ${cell.isToday ? 'ring-2 ring-accent-light dark:ring-accent-dark' : ''}`}
+            style={cell.filled ? { backgroundColor: habit.color } : {}}
+          />
+        ))}
       </div>
+      {loadingHistory && <div className="text-xs text-gray-400 mt-2">Loading history...</div>}
     </motion.div>
   );
 };
