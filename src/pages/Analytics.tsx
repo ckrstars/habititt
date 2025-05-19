@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable, DropResult, DroppableProvided, DraggableProvided } from 'react-beautiful-dnd';
 import { useConfetti } from '../hooks/useConfetti';
 import ConfirmationDialog from '../components/ConfirmationDialog';
+import YearGrid from '../components/YearGrid';
 
 // Updated interface for history items to match habitStore
 type HabitHistory = {
@@ -1559,68 +1560,13 @@ const Analytics = () => {
                             // Determine which habits to show
                             const habitsToShow = selectedHabit === 'all' ? habits : [habit!];
                             
-                            return habitsToShow.map(h => {
-                              // Create a year grid of contributions
-                              const today = new Date();
-                              const oneYearAgo = new Date();
-                              oneYearAgo.setFullYear(today.getFullYear() - 1);
-                              
-                              // Get all dates from the past year
-                              const dates: string[] = [];
-                              for (let d = new Date(oneYearAgo); d <= today; d.setDate(d.getDate() + 1)) {
-                                dates.push(new Date(d).toISOString().split('T')[0]);
-                              }
-                              
-                              // Create a map of completed dates
-                              const completedDatesMap = new Map<string, boolean>();
-                              h.history.forEach(entry => {
-                                if (entry.completed && dates.includes(entry.date)) {
-                                  completedDatesMap.set(entry.date, true);
-                                }
-                              });
-                              
-                              // Calculate week rows and day columns
-                              // weeks removed as unused
-                              
-                              return (
-                                <div key={h.id} className="mb-6">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-xl">{h.icon}</span>
-                                    <h4 className="font-medium">{h.name}</h4>
-                                  </div>
-                                  
-                                  <div className="grid grid-cols-53 gap-1 overflow-x-auto pb-2">
-                                    {Array.from({ length: dates.length }).map((_, index) => {
-                                      const date = dates[index];
-                                      const isCompleted = completedDatesMap.has(date);
-                                      // const dayDate = new Date(date); // Unused variable
-                                      // Unused variables removed
-                                      // const month = dayDate.getMonth();
-                                      // const dayOfMonth = dayDate.getDate();
-                                      
-                                      // Determine color intensity based on activity
-                                      let cellClass = 'bg-gray-100 dark:bg-gray-800';
-                                      if (isCompleted) {
-                                        cellClass = 'bg-green-300 dark:bg-green-700';
-                                      }
-                                      
-                                      return (
-                                        <div 
-                                          key={date} 
-                                          className={`w-3 h-3 rounded-sm ${cellClass} hover:ring-1 hover:ring-blue-400`}
-                                          title={`${date}: ${isCompleted ? 'Completed' : 'Not completed'}`}
-                                        />
-                                      );
-                                    })}
-                                  </div>
-                                  
-                                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                                    <span>{oneYearAgo.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
-                                    <span>{today.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
-                                  </div>
-                                </div>
-                              );
-                            });
+                            return (
+                              <div className="flex flex-col space-y-8">
+                                {habitsToShow.map(h => (
+                                  <YearGrid key={h.id} habit={h} />
+                                ))}
+                              </div>
+                            );
                           })()}
                         </div>
                       </div>
