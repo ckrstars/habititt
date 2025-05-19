@@ -1,35 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaArrowLeft, FaTrash, FaBell, FaTimes, FaPlusCircle, FaFileExport, FaFileImport } from 'react-icons/fa';
 import { useThemeStore } from '../store/themeStore';
 import useHabitStore from '../store/habitStore';
-import { useAuth } from '../contexts/AuthContext';
+import { AnimatePresence, motion } from 'framer-motion';
 
-type WidgetType = 'streak' | 'calendar' | 'weeklyProgress' | 'categoryStats' | 'timeAnalysis' | 'habitComparison';
+// Same widget types as in Analytics.tsx
+type WidgetType = 'weeklyProgress' | 'categoryStats' | 'streak' | 'habitCalendar' | 'timeAnalysis' | 'consistencyScore';
 
-interface WidgetConfig {
+interface Widget {
   id: string;
   type: WidgetType;
-  enabled: boolean;
   size: 'small' | 'medium' | 'large';
+  visible: boolean;
+  pinned: boolean;
 }
 
-const DEFAULT_WIDGETS: WidgetConfig[] = [
-  { id: '1', type: 'weeklyProgress', enabled: true, size: 'large' },
-  { id: '2', type: 'streak', enabled: true, size: 'small' },
-  { id: '3', type: 'categoryStats', enabled: true, size: 'medium' },
-  { id: '4', type: 'calendar', enabled: true, size: 'large' },
-  { id: '5', type: 'timeAnalysis', enabled: true, size: 'medium' },
-  { id: '6', type: 'habitComparison', enabled: true, size: 'medium' },
+const DEFAULT_WIDGETS: Widget[] = [
+  { id: '1', type: 'weeklyProgress', size: 'large', visible: true, pinned: false },
+  { id: '2', type: 'categoryStats', size: 'medium', visible: true, pinned: false },
+  { id: '3', type: 'streak', size: 'small', visible: true, pinned: false },
+  { id: '4', type: 'habitCalendar', size: 'large', visible: true, pinned: false },
+  { id: '5', type: 'timeAnalysis', size: 'medium', visible: true, pinned: false },
+  { id: '6', type: 'consistencyScore', size: 'medium', visible: true, pinned: false },
 ];
 
 const WIDGET_INFO = {
-  streak: { name: 'Streak Tracker', description: 'Track your longest streaks' },
-  calendar: { name: 'Habit Calendar', description: 'Visualize your habits in a calendar view' },
   weeklyProgress: { name: 'Weekly Progress', description: 'Bar chart showing your weekly progress' },
   categoryStats: { name: 'Category Stats', description: 'Pie chart showing distribution of habits by category' },
+  streak: { name: 'Streak Tracker', description: 'Track your longest streaks' },
+  habitCalendar: { name: 'Habit Calendar', description: 'Visualize your habits in a calendar view' },
   timeAnalysis: { name: 'Time Analysis', description: 'Analyze when you complete your habits' },
-  habitComparison: { name: 'Habit Comparison', description: 'Compare different habits' }
+  consistencyScore: { name: 'Consistency Score', description: 'See your overall consistency' }
 };
 
 const Settings = () => {
@@ -39,14 +41,53 @@ const Settings = () => {
   const [notifications, setNotifications] = useState(() => {
     return localStorage.getItem('notifications') === 'true';
   });
-  const [widgets, setWidgets] = useState<WidgetConfig[]>(() => {
-    const savedWidgets = localStorage.getItem('widgets');
-    return savedWidgets ? JSON.parse(savedWidgets) : DEFAULT_WIDGETS;
+  
+  // Load widgets from localStorage or use defaults
+  const [widgets, setWidgets] = useState<Widget[]>(() => {
+    try {
+      const savedWidgets = localStorage.getItem('widgets');
+      if (savedWidgets) {
+        // Try to parse the saved widgets
+        const parsed = JSON.parse(savedWidgets);
+        
+        // Validate the widget data
+        if (Array.isArray(parsed) && parsed.length > 0 && 
+            parsed.every(w => 
+              w.id && 
+              ['weeklyProgress', 'categoryStats', 'streak', 'habitCalendar', 'timeAnalysis', 'consistencyScore'].includes(w.type) &&
+              ['small', 'medium', 'large'].includes(w.size) &&
+              typeof w.visible === 'boolean'
+            )) {
+          return parsed;
+        }
+      }
+      return DEFAULT_WIDGETS;
+    } catch (error) {
+      console.error('Error loading widgets:', error);
+      return DEFAULT_WIDGETS;
+    }
   });
+
   const [backgroundTheme, setBackgroundTheme] = useState(() => {
     return localStorage.getItem('backgroundTheme') || 'default';
   });
-  const { loading } = useAuth();
+
+  const [showWidgetModal, setShowWidgetModal] = useState(false);
+
+  // Apply the background theme when component mounts or theme changes
+  useEffect(() => {
+    document.body.className = document.body.className
+      .replace(/bg-theme-\w+/g, '')
+      .concat(` bg-theme-${backgroundTheme}`);
+    
+    return () => {
+      // Apply the saved background theme on component unmount
+      const savedTheme = localStorage.getItem('backgroundTheme') || 'default';
+      document.body.className = document.body.className
+        .replace(/bg-theme-\w+/g, '')
+        .concat(` bg-theme-${savedTheme}`);
+    };
+  }, [backgroundTheme, theme]);
 
   const handleNotificationToggle = () => {
     const newValue = !notifications;
@@ -61,7 +102,7 @@ const Settings = () => {
   
   const handleWidgetToggle = (id: string) => {
     const updatedWidgets = widgets.map(widget => 
-      widget.id === id ? { ...widget, enabled: !widget.enabled } : widget
+      widget.id === id ? { ...widget, visible: !widget.visible } : widget
     );
     setWidgets(updatedWidgets);
     localStorage.setItem('widgets', JSON.stringify(updatedWidgets));
@@ -91,6 +132,20 @@ const Settings = () => {
       .concat(` bg-theme-${theme}`);
   };
   
+  const addWidget = (type: WidgetType) => {
+    const newId = (Math.max(0, ...widgets.map(w => parseInt(w.id))) + 1).toString();
+    const updatedWidgets = [...widgets, {
+      id: newId,
+      type,
+      size: 'medium',
+      visible: true,
+      pinned: false
+    }];
+    setWidgets(updatedWidgets);
+    localStorage.setItem('widgets', JSON.stringify(updatedWidgets));
+    setShowWidgetModal(false);
+  };
+  
   const handleExportData = () => {
     try {
       const data = {
@@ -116,21 +171,164 @@ const Settings = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen p-4 md:p-6">
-        <div className="h-10 w-64 bg-gray-200 dark:bg-gray-700 rounded mb-6 animate-pulse" />
-        <div className="card mb-6 animate-pulse h-32" />
-        <div className="card mb-6 animate-pulse h-32" />
-        <div className="card mb-6 animate-pulse h-32" />
-      </div>
-    );
-  }
+  // Just before the handleImportData function, add this helper function
+  const validateWidgetData = (widgetData: any): Widget => {
+    // Ensure the widget has a valid id
+    const id = typeof widgetData.id === 'string' ? widgetData.id : crypto.randomUUID();
+    
+    // Ensure the widget has a valid type
+    const validTypes: WidgetType[] = ['weeklyProgress', 'categoryStats', 'streak', 'habitCalendar', 'timeAnalysis', 'consistencyScore'];
+    const type: WidgetType = validTypes.includes(widgetData.type) ? widgetData.type : 'weeklyProgress';
+    
+    // Ensure the widget has a valid size
+    const size = (widgetData.size === 'small' || widgetData.size === 'medium' || widgetData.size === 'large') 
+      ? widgetData.size 
+      : 'medium';
+    
+    // Ensure the widget has valid visibility and pinned states
+    const visible = typeof widgetData.visible === 'boolean' ? widgetData.visible : true;
+    const pinned = typeof widgetData.pinned === 'boolean' ? widgetData.pinned : false;
+    
+    return { 
+      id, 
+      type, 
+      size: size as 'small' | 'medium' | 'large', // Force the type to be what we need
+      visible, 
+      pinned 
+    };
+  };
+
+  const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const fileReader = new FileReader();
+    const files = event.target.files;
+    
+    if (!files || files.length === 0) {
+      return;
+    }
+    
+    fileReader.readAsText(files[0], 'UTF-8');
+    fileReader.onload = e => {
+      try {
+        const content = e.target?.result;
+        if (typeof content === 'string') {
+          const parsedData = JSON.parse(content);
+          
+          // Import widgets if available
+          if (parsedData.widgets && Array.isArray(parsedData.widgets)) {
+            // Validate each widget to ensure it has the correct properties
+            const validatedWidgets = parsedData.widgets.map((widgetData: any) => validateWidgetData(widgetData));
+            
+            setWidgets(validatedWidgets);
+            localStorage.setItem('widgets', JSON.stringify(validatedWidgets));
+          }
+          
+          // Import background theme if available
+          if (parsedData.backgroundTheme) {
+            setBackgroundTheme(parsedData.backgroundTheme);
+            localStorage.setItem('backgroundTheme', parsedData.backgroundTheme);
+          }
+          
+          // Import notifications setting if available
+          if (parsedData.notifications !== undefined) {
+            setNotifications(parsedData.notifications);
+            localStorage.setItem('notifications', String(parsedData.notifications));
+          }
+          
+          alert('Data imported successfully!');
+        }
+      } catch (error) {
+        console.error('Import failed:', error);
+        alert('Failed to import data. Please make sure the file is a valid JSON export.');
+      }
+    };
+    
+    // Reset the file input
+    event.target.value = '';
+  };
+
+  // Widget Add Modal Component
+  const WidgetAddModal = () => (
+    <AnimatePresence>
+      {showWidgetModal && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-md"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: "spring", damping: 25 }}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Add Widget</h2>
+              <button 
+                onClick={() => setShowWidgetModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <FaTimes />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <button 
+                onClick={() => addWidget('weeklyProgress')}
+                className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 flex flex-col items-center"
+              >
+                <div className="text-3xl mb-2">📊</div>
+                <span className="text-sm font-medium">Weekly Progress</span>
+              </button>
+              <button 
+                onClick={() => addWidget('categoryStats')}
+                className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 flex flex-col items-center"
+              >
+                <div className="text-3xl mb-2">📋</div>
+                <span className="text-sm font-medium">Categories</span>
+              </button>
+              <button 
+                onClick={() => addWidget('streak')}
+                className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 flex flex-col items-center"
+              >
+                <div className="text-3xl mb-2">🔥</div>
+                <span className="text-sm font-medium">Streak</span>
+              </button>
+              <button 
+                onClick={() => addWidget('habitCalendar')}
+                className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 flex flex-col items-center"
+              >
+                <div className="text-3xl mb-2">📆</div>
+                <span className="text-sm font-medium">Calendar</span>
+              </button>
+              <button 
+                onClick={() => addWidget('timeAnalysis')}
+                className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 flex flex-col items-center"
+              >
+                <div className="text-3xl mb-2">⏰</div>
+                <span className="text-sm font-medium">Time Analysis</span>
+              </button>
+              <button 
+                onClick={() => addWidget('consistencyScore')}
+                className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 flex flex-col items-center"
+              >
+                <div className="text-3xl mb-2">📈</div>
+                <span className="text-sm font-medium">Consistency</span>
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 
   return (
     <div className="min-h-screen p-4 md:p-6">
+      {/* Render the add widget modal */}
+      <WidgetAddModal />
+    
       <header className="flex items-center space-x-4 mb-8">
-        <Link to="/dashboard" className="btn-secondary p-2">
+        <Link to="/" className="btn-secondary p-2">
           <FaArrowLeft className="w-5 h-5" />
         </Link>
         <h1 className="text-3xl font-bold">Settings</h1>
@@ -146,7 +344,7 @@ const Settings = () => {
               onClick={toggleTheme}
               className="btn-secondary"
             >
-              {theme === 'dark' ? 'Dark Mode' : theme === 'light' ? 'Light Mode' : 'Custom Mode'}
+              {theme === 'dark' ? 'Dark Mode' : theme === 'light' ? 'Light Mode' : 'System Mode'}
             </button>
           </div>
           
@@ -202,21 +400,24 @@ const Settings = () => {
                     <input
                       type="checkbox"
                       className="sr-only peer"
-                      checked={widget.enabled}
+                      checked={widget.visible}
                       onChange={() => handleWidgetToggle(widget.id)}
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-light/20 dark:peer-focus:ring-primary-dark/20 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-light dark:peer-checked:bg-primary-dark" />
                   </label>
                   <button
                     onClick={() => handleWidgetRemove(widget.id)}
-                    className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded"
+                    className="p-1 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-red-500 dark:hover:text-red-400 rounded"
                   >
                     <FaTimes size={16} />
                   </button>
                 </div>
               </div>
             ))}
-            <button className="btn-secondary w-full flex items-center justify-center">
+            <button 
+              onClick={() => setShowWidgetModal(true)}
+              className="btn-secondary w-full flex items-center justify-center"
+            >
               <FaPlusCircle className="mr-2" /> Add Widget
             </button>
           </div>
@@ -275,7 +476,12 @@ const Settings = () => {
               </div>
               <label className="btn-secondary flex items-center cursor-pointer">
                 <FaFileImport className="mr-2" /> Import
-                <input type="file" className="hidden" accept=".json" />
+                <input 
+                  type="file" 
+                  className="hidden" 
+                  accept=".json" 
+                  onChange={handleImportData}
+                />
               </label>
             </div>
             
@@ -317,7 +523,7 @@ const Settings = () => {
         <div className="card">
           <h2 className="text-xl font-semibold mb-4">About</h2>
           <div className="space-y-2 text-gray-600 dark:text-gray-400">
-            <p>Daily Habit Checklist</p>
+            <p>HABITIT - Daily Habit Tracker</p>
             <p>Version 1.0.0</p>
             <p>Built with React + Tailwind CSS</p>
           </div>

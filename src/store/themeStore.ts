@@ -33,7 +33,7 @@ const DEFAULT_DARK_THEME: CustomTheme = {
   backgroundColor: '#121212',
   textColor: '#e0e0e0',
   cardColor: '#1e1e1e',
-  accentColor: '#3B82F6',
+  accentColor: '#14B8A6',
 };
 
 export const useThemeStore = create<ThemeState>((set, get) => ({
@@ -46,9 +46,14 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
     const theme = savedTheme || (prefersDark ? 'dark' : 'light');
-    const customTheme = savedCustomTheme 
+    let customTheme = savedCustomTheme 
       ? JSON.parse(savedCustomTheme) 
       : theme === 'dark' ? DEFAULT_DARK_THEME : DEFAULT_LIGHT_THEME;
+
+    // If theme is custom and no customTheme is saved, use dark as base if prefersDark
+    if (theme === 'custom' && !savedCustomTheme && prefersDark) {
+      customTheme = DEFAULT_DARK_THEME;
+    }
 
     set({ theme, customTheme });
     get().applyThemeToCSS();

@@ -297,44 +297,48 @@ const ThemeCustomizer = () => {
           </div>
           
           {/* Light Theme presets */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium mb-2">Light Mode Presets</label>
-            <div className="grid grid-cols-2 gap-2">
-              {LIGHT_THEME_PRESETS.map((preset) => (
-                <ThemePreset
-                  key={`light-${preset.name}`}
-                  name={preset.name}
-                  primaryColor={preset.theme.primaryColor}
-                  backgroundColor={preset.theme.backgroundColor}
-                  accentColor={preset.theme.accentColor}
-                  onClick={() => applyPreset(preset.theme, preset.name, preset.mode)}
-                  isSelected={selectedPreset === preset.name || 
-                    (selectedPreset === null && isPresetMatching(preset.theme))}
-                  targetMode={preset.mode}
-                />
-              ))}
+          {theme === 'custom' && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">Light Mode Presets</label>
+              <div className="grid grid-cols-2 gap-2">
+                {LIGHT_THEME_PRESETS.map((preset) => (
+                  <ThemePreset
+                    key={`light-${preset.name}`}
+                    name={preset.name}
+                    primaryColor={preset.theme.primaryColor}
+                    backgroundColor={preset.theme.backgroundColor}
+                    accentColor={preset.theme.accentColor}
+                    onClick={() => applyPreset(preset.theme, preset.name, preset.mode)}
+                    isSelected={selectedPreset === preset.name || 
+                      (selectedPreset === null && isPresetMatching(preset.theme))}
+                    targetMode={preset.mode}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Dark Theme presets */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium mb-2">Dark Mode Presets</label>
-            <div className="grid grid-cols-2 gap-2">
-              {DARK_THEME_PRESETS.map((preset) => (
-                <ThemePreset
-                  key={`dark-${preset.name}`}
-                  name={preset.name}
-                  primaryColor={preset.theme.primaryColor}
-                  backgroundColor={preset.theme.backgroundColor}
-                  accentColor={preset.theme.accentColor}
-                  onClick={() => applyPreset(preset.theme, preset.name, preset.mode)}
-                  isSelected={selectedPreset === preset.name || 
-                    (selectedPreset === null && isPresetMatching(preset.theme))}
-                  targetMode={preset.mode}
-                />
-              ))}
+          {theme === 'custom' && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">Dark Mode Presets</label>
+              <div className="grid grid-cols-2 gap-2">
+                {DARK_THEME_PRESETS.map((preset) => (
+                  <ThemePreset
+                    key={`dark-${preset.name}`}
+                    name={preset.name}
+                    primaryColor={preset.theme.primaryColor}
+                    backgroundColor={preset.theme.backgroundColor}
+                    accentColor={preset.theme.accentColor}
+                    onClick={() => applyPreset(preset.theme, preset.name, preset.mode)}
+                    isSelected={selectedPreset === preset.name || 
+                      (selectedPreset === null && isPresetMatching(preset.theme))}
+                    targetMode={preset.mode}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
           
           <hr className="my-4 border-gray-200 dark:border-gray-700" />
           

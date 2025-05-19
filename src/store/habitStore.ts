@@ -25,11 +25,15 @@ export interface Habit {
     completed: boolean;
     timeOfCompletion?: string;
   }[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface HabitState {
   habits: Habit[];
-  addHabit: (habit: Omit<Habit, 'id' | 'progress' | 'streak' | 'history'>) => void;
+  loading: boolean;
+  error: string | null;
+  addHabit: (habit: Omit<Habit, 'id' | 'history' | 'createdAt' | 'updatedAt' | 'progress' | 'streak'>) => void;
   updateHabit: (id: string, habit: Partial<Habit>) => void;
   deleteHabit: (id: string) => void;
   incrementProgress: (id: string) => void;
@@ -64,46 +68,76 @@ const useHabitStore = create<HabitState>()(
   persist(
     (set, get) => ({
       habits: [],
+      loading: false,
+      error: null,
+
       addHabit: (habit) => {
+        const now = new Date().toISOString();
         const newHabit: Habit = {
           ...habit,
           id: crypto.randomUUID(),
           progress: 0,
           streak: 0,
-          reminderEnabled: false,
           color: habit.color || categoryColors[habit.category],
           countType: habit.countType || 'completion',
           countUnit: habit.countUnit || '',
           history: [],
+          reminderEnabled: habit.reminderEnabled || false,
+          createdAt: now,
+          updatedAt: now,
         };
         set((state) => ({ habits: [...state.habits, newHabit] }));
       },
+
       updateHabit: (id, updatedHabit) => {
         set((state) => ({
           habits: state.habits.map((habit) =>
-            habit.id === id ? { ...habit, ...updatedHabit } : habit
+            habit.id === id ? { ...habit, ...updatedHabit, updatedAt: new Date().toISOString() } : habit
           ),
         }));
       },
+
       deleteHabit: (id) => {
         set((state) => ({
           habits: state.habits.filter((habit) => habit.id !== id),
         }));
       },
+
       incrementProgress: (id) => {
         set((state) => ({
           habits: state.habits.map((habit) => {
             if (habit.id === id) {
               const newProgress = Math.min(habit.progress + 1, habit.target);
+              // If target reached, complete the habit
+              if (newProgress === habit.target) {
+                const today = new Date().toISOString().split('T')[0];
+                const historyEntry = {
+                  date: today,
+                  count: habit.target,
+                  completed: true,
+                  timeOfCompletion: new Date().toISOString(),
+                };
+                
+                return {
+                  ...habit,
+                  progress: newProgress,
+                  streak: habit.streak + 1,
+                  history: [...habit.history, historyEntry],
+                  updatedAt: new Date().toISOString(),
+                };
+              }
+              
               return {
                 ...habit,
                 progress: newProgress,
+                updatedAt: new Date().toISOString(),
               };
             }
             return habit;
           }),
         }));
       },
+
       decrementProgress: (id) => {
         set((state) => ({
           habits: state.habits.map((habit) => {
@@ -112,12 +146,14 @@ const useHabitStore = create<HabitState>()(
               return {
                 ...habit,
                 progress: newProgress,
+                updatedAt: new Date().toISOString(),
               };
             }
             return habit;
           }),
         }));
       },
+
       completeHabit: (id) => {
         set((state) => ({
           habits: state.habits.map((habit) => {
@@ -134,12 +170,14 @@ const useHabitStore = create<HabitState>()(
                 progress: habit.target,
                 streak: habit.streak + 1,
                 history: [...habit.history, historyEntry],
+                updatedAt: new Date().toISOString(),
               };
             }
             return habit;
           }),
         }));
       },
+
       undoCompleteHabit: (id) => {
         set((state) => ({
           habits: state.habits.map((habit) => {
@@ -153,12 +191,14 @@ const useHabitStore = create<HabitState>()(
                 progress: 0, // Reset progress
                 streak: Math.max(0, habit.streak - 1), // Decrement streak, but not below 0
                 history: updatedHistory,
+                updatedAt: new Date().toISOString(),
               };
             }
             return habit;
           }),
         }));
       },
+
       toggleReminder: (id, enabled) => {
         set((state) => ({
           habits: state.habits.map((habit) => 
@@ -166,6 +206,7 @@ const useHabitStore = create<HabitState>()(
           ),
         }));
       },
+
       setReminderTime: (id, time) => {
         set((state) => ({
           habits: state.habits.map((habit) => 
@@ -173,6 +214,7 @@ const useHabitStore = create<HabitState>()(
           ),
         }));
       },
+
       getCategoryStats: () => {
         const habits = get().habits;
         return habits.reduce((acc, habit) => {
@@ -180,6 +222,7 @@ const useHabitStore = create<HabitState>()(
           return acc;
         }, {} as Record<HabitCategory, number>);
       },
+
       getCompletionStats: () => {
         const habits = get().habits;
         const today = new Date().toISOString().split('T')[0];
@@ -195,10 +238,12 @@ const useHabitStore = create<HabitState>()(
           };
         }, { completed: 0, total: 0 });
       },
+
       getLongestStreak: () => {
         const habits = get().habits;
         return habits.reduce((max, habit) => Math.max(max, habit.streak), 0);
       },
+
       getWeeklyCompletion: () => {
         const habits = get().habits;
         
@@ -221,6 +266,7 @@ const useHabitStore = create<HabitState>()(
           return dayData;
         });
       },
+
       getHabitCalendarData: (habitId) => {
         const habits = get().habits;
         const habit = habits.find(h => h.id === habitId);
@@ -253,6 +299,7 @@ const useHabitStore = create<HabitState>()(
         
         return calendarData;
       },
+
       isHabitCompletedToday: (habitId) => {
         const habits = get().habits;
         const habit = habits.find(h => h.id === habitId);
@@ -400,7 +447,7 @@ const useHabitStore = create<HabitState>()(
             countType: "completion",
             countUnit: "",
           },
-        ] as Omit<Habit, 'id' | 'progress' | 'streak' | 'history'>[];
+        ] as Omit<Habit, 'id' | 'history' | 'createdAt' | 'updatedAt' | 'progress' | 'streak'>[];
         
         const { addHabit, updateHabit } = get();
         
@@ -533,7 +580,7 @@ const useHabitStore = create<HabitState>()(
       }
     }),
     {
-      name: 'habit-store',
+      name: 'habit-storage',
     }
   )
 );

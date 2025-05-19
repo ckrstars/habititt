@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes } from 'react-icons/fa';
-import { Habit } from '../lib/supabase';
+import { Habit } from '../store/habitStore';
 
 interface NewHabitModalProps {
   isOpen: boolean;
   onClose: () => void;
   habitId?: string | null;
-  onAdd: (habit: Omit<Habit, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
-  onUpdate: (id: string, habit: Partial<Habit>) => Promise<void>;
+  onAdd: (habit: Omit<Habit, 'id' | 'history' | 'createdAt' | 'updatedAt' | 'progress' | 'streak'>) => void;
+  onUpdate: (id: string, habit: Partial<Habit>) => void;
   habits: Habit[];
 }
 
@@ -21,6 +21,8 @@ const ICONS = [
 ];
 const COLOR_OPTIONS = [
   '#4ade80', '#3b82f6', '#a855f7', '#ec4899', '#eab308', '#f97316', '#ef4444', '#06b6d4', '#64748b',
+  '#84cc16', '#14b8a6', '#8b5cf6', '#d946ef', '#f43f5e', '#15803d', '#1d4ed8', '#7e22ce', '#be123c', '#b45309',
+  '#000000', '#4b5563', '#94a3b8', '#e5e7eb', '#ffffff'
 ];
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -33,13 +35,13 @@ const NewHabitModal = ({ isOpen, onClose, habitId, onAdd, onUpdate, habits }: Ne
     icon: habitToEdit?.icon || ICONS[0],
     color: habitToEdit?.color || COLOR_OPTIONS[1],
     target: habitToEdit?.target || 1,
-    count_type: habitToEdit?.count_type || 'completion' as 'completion' | 'count',
-    count_unit: habitToEdit?.count_unit || '',
+    countType: habitToEdit?.countType || 'completion' as 'completion' | 'count',
+    countUnit: habitToEdit?.countUnit || '',
     frequency: habitToEdit?.frequency || 'daily' as typeof FREQUENCY_OPTIONS[number],
     category: habitToEdit?.category || 'health',
-    custom_days: habitToEdit?.custom_days || [] as number[],
-    reminder_enabled: habitToEdit?.reminder_enabled || false,
-    reminder_time: habitToEdit?.reminder_time || '09:00',
+    customDays: habitToEdit?.customDays || [] as number[],
+    reminderEnabled: habitToEdit?.reminderEnabled || false,
+    reminderTime: habitToEdit?.reminderTime || '09:00',
   });
   const modalRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -53,13 +55,13 @@ const NewHabitModal = ({ isOpen, onClose, habitId, onAdd, onUpdate, habits }: Ne
         icon: habitToEdit.icon || ICONS[0],
         color: habitToEdit.color || COLOR_OPTIONS[1],
         target: habitToEdit.target || 1,
-        count_type: habitToEdit.count_type || 'completion',
-        count_unit: habitToEdit.count_unit || '',
+        countType: habitToEdit.countType || 'completion',
+        countUnit: habitToEdit.countUnit || '',
         frequency: habitToEdit.frequency || 'daily',
         category: habitToEdit.category || 'health',
-        custom_days: habitToEdit.custom_days || [],
-        reminder_enabled: habitToEdit.reminder_enabled || false,
-        reminder_time: habitToEdit.reminder_time || '09:00',
+        customDays: habitToEdit.customDays || [],
+        reminderEnabled: habitToEdit.reminderEnabled || false,
+        reminderTime: habitToEdit.reminderTime || '09:00',
       });
     } else {
       setFormData({
@@ -68,13 +70,13 @@ const NewHabitModal = ({ isOpen, onClose, habitId, onAdd, onUpdate, habits }: Ne
         icon: ICONS[0],
         color: COLOR_OPTIONS[1],
         target: 1,
-        count_type: 'completion',
-        count_unit: '',
+        countType: 'completion',
+        countUnit: '',
         frequency: 'daily',
         category: 'health',
-        custom_days: [],
-        reminder_enabled: false,
-        reminder_time: '09:00',
+        customDays: [],
+        reminderEnabled: false,
+        reminderTime: '09:00',
       });
     }
     // eslint-disable-next-line
@@ -119,9 +121,9 @@ const NewHabitModal = ({ isOpen, onClose, habitId, onAdd, onUpdate, habits }: Ne
   const handleCustomDayToggle = (dayIdx: number) => {
     setFormData(prev => ({
       ...prev,
-      custom_days: prev.custom_days.includes(dayIdx)
-        ? prev.custom_days.filter(d => d !== dayIdx)
-        : [...prev.custom_days, dayIdx],
+      customDays: prev.customDays.includes(dayIdx)
+        ? prev.customDays.filter(d => d !== dayIdx)
+        : [...prev.customDays, dayIdx],
     }));
   };
 
@@ -139,21 +141,21 @@ const NewHabitModal = ({ isOpen, onClose, habitId, onAdd, onUpdate, habits }: Ne
       setLoading(false);
       return;
     }
-    if (formData.count_type === 'count' && !formData.count_unit.trim()) {
+    if (formData.countType === 'count' && !formData.countUnit.trim()) {
       setError('Unit is required for count type');
       setLoading(false);
       return;
     }
-    if (formData.frequency === 'custom' && formData.custom_days.length === 0) {
+    if (formData.frequency === 'custom' && formData.customDays.length === 0) {
       setError('Select at least one custom day');
       setLoading(false);
       return;
     }
     try {
       if (habitToEdit && habitId) {
-        await onUpdate(habitId, formData);
+        onUpdate(habitId, formData);
       } else {
-        await onAdd({ ...formData, progress: 0, streak: 0 });
+        onAdd(formData);
       }
       onClose();
     } catch (err) {
@@ -175,7 +177,7 @@ const NewHabitModal = ({ isOpen, onClose, habitId, onAdd, onUpdate, habits }: Ne
       >
         <motion.div
           ref={modalRef}
-          className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg p-6"
+          className="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg p-6 custom-theme text-[var(--text-color)]"
           initial={{ scale: 0.95, opacity: 0, y: 40 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 40 }}
@@ -247,61 +249,71 @@ const NewHabitModal = ({ isOpen, onClose, habitId, onAdd, onUpdate, habits }: Ne
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Color</label>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
                   {COLOR_OPTIONS.map(color => (
                     <button
                       key={color}
                       type="button"
-                      className={`w-6 h-6 rounded-full border-2 ${formData.color === color ? 'border-primary-light dark:border-primary-dark' : 'border-transparent'}`}
-                      style={{ backgroundColor: color }}
+                      className={`color-swatch ${formData.color === color ? 'selected' : ''}`}
+                      style={{ 
+                        backgroundColor: color,
+                        border: color === '#ffffff' ? '1px solid #e5e5e5' : 'none'
+                      }}
                       onClick={() => setFormData(prev => ({ ...prev, color }))}
                       aria-label={`Select color ${color}`}
                     />
                   ))}
+                  <div className="mt-2 w-full">
+                    <label className="text-xs text-gray-500 mb-1 block">Custom color</label>
+                    <input
+                      type="color"
+                      value={formData.color}
+                      onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                      className="w-full h-8 cursor-pointer rounded"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Track Type</label>
+                <label className="block text-sm font-medium mb-1">Tracking Type</label>
                 <select
-                  name="count_type"
-                  value={formData.count_type}
+                  name="countType"
+                  value={formData.countType}
                   onChange={handleSelectChange}
                   className="input w-full"
                 >
-                  <option value="completion">Mark as Complete</option>
-                  <option value="count">Count Progress</option>
+                  <option value="completion">Completion</option>
+                  <option value="count">Count</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Target</label>
+                <label className="block text-sm font-medium mb-1">Target {formData.countType === 'count' ? '& Unit' : ''}</label>
+                <div className="flex">
                 <input
                   type="number"
                   name="target"
-                  min={1}
                   value={formData.target}
                   onChange={handleInputChange}
+                    min={1}
                   className="input w-full"
                   required
                 />
-              </div>
-            </div>
-            {formData.count_type === 'count' && (
-              <div>
-                <label className="block text-sm font-medium mb-1">Unit</label>
+                  {formData.countType === 'count' && (
                 <input
                   type="text"
-                  name="count_unit"
-                  value={formData.count_unit}
+                      name="countUnit"
+                      value={formData.countUnit}
                   onChange={handleInputChange}
-                  className="input w-full"
-                  placeholder="e.g. pages, km, reps"
+                      className="input w-full ml-2"
+                      placeholder="Unit"
                   required
                 />
+                  )}
+                </div>
               </div>
-            )}
-            <div className="grid grid-cols-2 gap-4">
+            </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Frequency</label>
                 <select
@@ -314,77 +326,64 @@ const NewHabitModal = ({ isOpen, onClose, habitId, onAdd, onUpdate, habits }: Ne
                     <option key={freq} value={freq}>{freq.charAt(0).toUpperCase() + freq.slice(1)}</option>
                   ))}
                 </select>
-              </div>
               {formData.frequency === 'custom' && (
-                <div>
-                  <label className="block text-sm font-medium mb-1">Custom Days</label>
-                  <div className="flex flex-wrap gap-1">
-                    {DAYS.map((day, idx) => (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {DAYS.map((day, i) => (
                       <button
                         key={day}
                         type="button"
-                        className={`px-2 py-1 rounded-lg text-xs font-medium ${formData.custom_days.includes(idx) ? 'bg-primary-light dark:bg-primary-dark text-white' : 'bg-gray-100 dark:bg-gray-700'}`}
-                        onClick={() => handleCustomDayToggle(idx)}
+                      className={`px-3 py-1 rounded-full text-sm ${formData.customDays.includes(i) ? 'bg-primary-light dark:bg-primary-dark text-white' : 'bg-gray-100 dark:bg-gray-800'}`}
+                      onClick={() => handleCustomDayToggle(i)}
                       >
                         {day}
                       </button>
                     ))}
-                  </div>
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div>
+              <div className="flex items-center mb-2">
               <input
                 type="checkbox"
-                name="reminder_enabled"
-                checked={formData.reminder_enabled}
+                  id="reminderEnabled"
+                  name="reminderEnabled"
+                  checked={formData.reminderEnabled}
                 onChange={handleInputChange}
-                className="form-checkbox h-4 w-4 text-primary-light"
-                id="reminder_enabled"
+                  className="mr-2"
               />
-              <label htmlFor="reminder_enabled" className="text-sm font-medium">Enable Reminder</label>
-              {formData.reminder_enabled && (
+                <label htmlFor="reminderEnabled" className="text-sm font-medium">Enable Reminder</label>
+              </div>
+              {formData.reminderEnabled && (
                 <input
                   type="time"
-                  name="reminder_time"
-                  value={formData.reminder_time}
+                  name="reminderTime"
+                  value={formData.reminderTime}
                   onChange={handleInputChange}
-                  className="input ml-2 w-28"
+                  className="input w-full"
                 />
               )}
             </div>
-            {/* Live Preview */}
-            <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg mt-2">
-              <h3 className="font-medium mb-2">Preview</h3>
-              <div className="flex items-center space-x-2">
-                <span className="text-2xl">{formData.icon}</span>
-                <span className="font-medium">{formData.name || 'Habit Name'}</span>
-                <div className="w-5 h-5 rounded-full" style={{ backgroundColor: formData.color }}></div>
+            {error && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-red-600 dark:text-red-400">
+                {error}
               </div>
-              {formData.description && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                  {formData.description}
-                </p>
-              )}
-              {formData.count_type === 'count' && formData.count_unit && (
-                <p className="text-sm mt-1">
-                  Target: {formData.target} {formData.count_unit}
-                </p>
-              )}
-              {formData.count_type === 'completion' && (
-                <p className="text-sm mt-1">
-                  Daily Target: {formData.target}
-                </p>
-              )}
-            </div>
-            {error && <div className="text-red-500 text-sm text-center mt-2">{error}</div>}
+            )}
+            <div className="flex space-x-3">
+              <button
+                type="button"
+                className="btn-secondary flex-1"
+                onClick={onClose}
+              >
+                Cancel
+              </button>
             <button
               type="submit"
-              className="btn-primary w-full mt-4"
+                className="btn-primary flex-1"
               disabled={loading}
             >
-              {loading ? 'Saving...' : habitToEdit ? 'Update Habit' : 'Add Habit'}
+                {loading ? 'Saving...' : habitToEdit ? 'Update Habit' : 'Create Habit'}
             </button>
+            </div>
           </form>
         </motion.div>
       </motion.div>

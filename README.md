@@ -1,65 +1,250 @@
-# Daily Habit Checklist
+# HABITIT - Your Personal Habit Tracking Companion
 
-A beautiful and intuitive habit tracking application inspired by HabitKit. Track your daily habits, visualize your progress, and stay motivated with beautiful analytics.
+![HABITIT](public/logo192.png)
+
+## Overview
+
+HABITIT is a comprehensive, feature-rich habit tracking application designed to help you build and maintain positive habits. With its intuitive interface, customizable dashboard, and insightful analytics, HABITIT makes tracking your daily routines effortless and motivating.
+
+Unlike other habit trackers, HABITIT focuses on user privacy by storing all your data locally on your device, ensuring that your personal information and habit data never leave your control.
+
+## Table of Contents
+
+- [Features](#features)
+  - [Dashboard](#dashboard)
+  - [Habit Management](#habit-management)
+  - [Analytics](#analytics)
+  - [Customization](#customization)
+  - [Data Management](#data-management)
+- [Getting Started](#getting-started)
+  - [Installation](#installation)
+  - [Initial Setup](#initial-setup)
+- [User Guide](#user-guide)
+  - [Creating Your First Habit](#creating-your-first-habit)
+  - [Tracking Your Progress](#tracking-your-progress)
+  - [Using Analytics](#using-analytics)
+  - [Customizing Your Experience](#customizing-your-experience)
+- [Technical Information](#technical-information)
+  - [Local Storage](#local-storage)
+  - [Technology Stack](#technology-stack)
+- [Privacy and Security](#privacy-and-security)
+- [Future Roadmap](#future-roadmap)
+- [License](#license)
 
 ## Features
 
-- 📝 Create and manage daily habits
-- 📊 Visual progress tracking with animated bars
-- 📈 Detailed analytics and insights
-- 🌓 Light/Dark mode support
-- 📱 Fully responsive design
-- ✨ Smooth animations and transitions
-- 🔄 Data persistence with localStorage
+### Dashboard
 
-## Tech Stack
+The HABITIT dashboard serves as your central command center for habit tracking:
 
-- React 18+ with TypeScript
-- Tailwind CSS for styling
-- Framer Motion for animations
-- Recharts for data visualization
-- Zustand for state management
+- **Daily Overview**: See all your habits for the day at a glance
+- **Progress Tracking**: Visual indicators show your completion status
+- **Streaks**: Track consecutive days of habit completion
+- **Quick Actions**: Complete, edit, or view details with a single click
+- **Responsive Design**: Works beautifully on any device from mobile to desktop
+- **Dark/Light Modes**: Choose the theme that's easiest on your eyes
 
-## Prerequisites
+### Habit Management
 
-Before you begin, ensure you have the following installed:
-- Node.js (v18 or higher)
-- npm (v8 or higher)
+HABITIT offers flexible options for creating and managing habits:
 
-## Setup Instructions
+- **Multiple Categories**: Organize habits by health, productivity, learning, mindfulness, finance, social, or custom categories
+- **Frequency Options**: Set habits as daily, weekly, or custom recurring schedules
+- **Count or Completion**: Track habits by simple completion or with countable metrics (e.g., glasses of water, pages read)
+- **Color Coding**: Assign colors to habits for quick visual identification
+- **Icons**: Choose from a variety of icons to represent your habits
+- **Descriptions**: Add detailed notes about your habits for motivation and clarity
+- **Reminders**: Set optional time-based reminders for habit completion
 
-1. Install dependencies:
-   ```bash
+### Analytics
+
+Gain deeper insights into your habit performance with comprehensive analytics:
+
+- **Completion Rates**: See percentage of habits completed over time
+- **Streaks Analysis**: Track your longest streaks and current streak status
+- **Consistency Scores**: Measure how consistent you've been with each habit
+- **Time Analysis**: Discover what times of day you're most productive
+- **Category Distribution**: Visualize the balance of habits across categories
+- **Calendar Views**: See your habit completion patterns on daily, weekly, monthly and yearly calendars
+- **Habit Correlation**: Discover which habits tend to be completed together
+- **Custom Date Ranges**: Analyze your performance over specific periods
+
+### Customization
+
+HABITIT adapts to your personal preferences:
+
+- **Widget Dashboard**: Arrange, resize, and customize analytics widgets
+- **Background Themes**: Choose from 7 different background styles
+  - Default
+  - Gradient
+  - Waves
+  - Confetti
+  - Dots
+  - Geometric
+  - Circuit
+- **Theme Modes**: Toggle between light and dark modes
+- **Widget Visibility**: Show or hide specific analytics widgets
+- **Dashboard Layout**: Pin important widgets to the top of your dashboard
+
+### Data Management
+
+Keep control of your data with powerful management features:
+
+- **Local Storage**: All data stored securely on your device
+- **Data Export**: Export your habit data and settings as JSON for backup
+- **Data Import**: Restore from previous backups
+- **Data Privacy**: No account creation or cloud storage required
+
+## Getting Started
+
+### Installation
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/ckrstars/habititt.git
+   ```
+
+2. Install dependencies:
+   ```
+   cd habitit
    npm install
    ```
 
-2. Start development server:
-   ```bash
-   npm run dev
+3. Start the development server:
+   ```
+   npm start
    ```
 
-3. Build for production:
-   ```bash
+4. For production build:
+   ```
    npm run build
    ```
 
-## Project Structure
+### Initial Setup
 
-```
-src/
-├── components/     # Reusable UI components
-├── pages/         # Main application pages
-├── store/         # State management
-├── hooks/         # Custom React hooks
-├── types/         # TypeScript type definitions
-├── utils/         # Helper functions
-└── styles/        # Global styles and themes
-```
+When you first launch HABITIT, you'll see an empty dashboard ready for your habits. You can:
 
-## Contributing
+1. Click the "+" button to add your first habit
+2. Use the theme toggle in the top right to switch between light and dark modes
+3. Visit the Settings page to customize your experience
+4. Start tracking your first habit right away!
 
-This project is open for contributions. Please follow the existing code style and add unit tests for any new features.
+## User Guide
+
+### Creating Your First Habit
+
+1. From the Dashboard, click the "+" button
+2. Enter a name for your habit
+3. Select an icon and color
+4. Choose a category (health, productivity, etc.)
+5. Set the frequency (daily, weekly, etc.)
+6. Choose between completion or count tracking
+7. Optionally set reminders
+8. Add a description if desired
+9. Click "Create Habit"
+
+### Tracking Your Progress
+
+1. From the Dashboard, click the checkbox or increment button next to any habit to mark it as complete
+2. Your streak will automatically update
+3. View detailed history by clicking on any habit
+4. Undo accidental completions from the habit detail view
+5. See your daily progress at the top of the Dashboard
+
+### Using Analytics
+
+1. Navigate to the Analytics page from the main navigation
+2. Select a date range to analyze
+3. Choose specific habits or view all habits
+4. Rearrange widgets by dragging and dropping them
+5. Resize widgets using the controls in the top-right corner of each widget
+6. Pin important widgets to the top of your dashboard
+7. Add new widgets with the "+" button at the bottom of the screen
+
+### Customizing Your Experience
+
+1. Navigate to the Settings page
+2. Toggle between light and dark themes
+3. Choose a background theme
+4. Configure which widgets appear on your Analytics dashboard
+5. Adjust notification preferences
+6. Export or import your data
+7. Reset habits if needed
+
+## Technical Information
+
+### Local Storage
+
+HABITIT uses browser local storage to maintain your data:
+
+- **habit-storage**: Stores your habit definitions and history
+- **theme**: Remembers your theme preference (light/dark/custom)
+- **widgets**: Keeps track of your Analytics dashboard configuration
+- **backgroundTheme**: Saves your selected background theme
+- **notifications**: Tracks your notification preferences
+
+All data remains on your device and persists between sessions.
+
+### Technology Stack
+
+HABITIT is built with modern web technologies:
+
+- **React**: For the user interface and component structure
+- **TypeScript**: For type safety and better development experience
+- **Tailwind CSS**: For responsive, utility-first styling
+- **Zustand**: For state management
+- **Framer Motion**: For smooth animations and transitions
+- **React Beautiful DnD**: For drag-and-drop interfaces
+- **React Icons**: For a comprehensive icon library
+- **Canvas Confetti**: For celebration animations
+
+## Privacy and Security
+
+HABITIT prioritizes your privacy:
+
+- **No Accounts**: No user registration or login required
+- **No Cloud Storage**: All data stays on your device
+- **No Tracking**: No analytics or user tracking implemented
+- **No Network Requests**: App runs entirely client-side
+
+## Future Roadmap
+
+Planned features for future releases:
+
+- **Habit Templates**: Quick-start templates for common habit categories
+- **Social Sharing**: Optional sharing of achievements on social media
+- **Advanced Statistics**: More in-depth analysis of habit patterns
+- **Multiple Profiles**: Support for tracking habits for different users
+- **Habit Groups**: Group related habits together
+- **Progressive Web App**: Installable on mobile devices
+- **Cross-Device Sync**: Optional encrypted sync between devices
 
 ## License
 
-MIT License - feel free to use this code for your own projects! 
+MIT License
+
+Copyright (c) 2025 HABITIT
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+HABITIT is designed and developed with ❤️ to help you build better habits and improve your daily life.
+
+© 2025 HABITIT 
