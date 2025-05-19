@@ -1,6 +1,8 @@
 # HABITIT - Your Personal Habit Tracking Companion
 
-![HABITIT](public/logo192.png)
+<p align="center">
+  <img src="LOGO.png" alt="HABITIT Logo" width="200"/>
+</p>
 
 ## Overview
 
