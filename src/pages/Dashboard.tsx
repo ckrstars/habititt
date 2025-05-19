@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaPlus, FaMoon, FaSun, FaPalette, FaCheckCircle, FaList, FaThLarge, FaCalendarAlt, FaSort, FaGripVertical, FaFire, FaCheck, FaTimes, FaEdit } from 'react-icons/fa';
+import { FaPlus, FaMoon, FaSun, FaPalette, FaCheckCircle, FaList, FaThLarge, FaGripVertical, FaFire, FaCheck, FaTimes, FaEdit } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import HabitCard from '../components/HabitCard';
 import useHabitStore, { Habit } from '../store/habitStore';
@@ -48,134 +48,6 @@ const Logo = () => (
   </motion.div>
 );
 
-// Separate ThemeToggleIcon component with animations
-const ThemeToggleIcon = () => {
-  const { theme, toggleTheme } = useThemeStore();
-  
-  return (
-    <motion.div
-      onClick={toggleTheme}
-      whileHover={{ rotate: 15 }}
-      whileTap={{ scale: 0.9 }}
-    >
-      <AnimatePresence mode="wait">
-        {theme === 'dark' ? (
-          <motion.div
-            key="sun"
-            initial={{ opacity: 0, rotate: -90 }}
-            animate={{ opacity: 1, rotate: 0 }}
-            exit={{ opacity: 0, rotate: 90 }}
-            transition={{ duration: 0.2 }}
-          >
-            <FaSun className="w-5 h-5" />
-          </motion.div>
-        ) : theme === 'light' ? (
-          <motion.div
-            key="moon"
-            initial={{ opacity: 0, rotate: 90 }}
-            animate={{ opacity: 1, rotate: 0 }}
-            exit={{ opacity: 0, rotate: -90 }}
-            transition={{ duration: 0.2 }}
-          >
-            <FaMoon className="w-5 h-5" />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="palette"
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.5 }}
-            transition={{ duration: 0.2 }}
-          >
-            <FaPalette className="w-5 h-5" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-};
-
-// Animated header for "My Habits" section
-const AnimatedHeader = () => {
-  const currentHour = new Date().getHours();
-  let greeting = 'Hello';
-  
-  if (currentHour < 12) {
-    greeting = 'Good morning';
-  } else if (currentHour < 18) {
-    greeting = 'Good afternoon';
-  } else {
-    greeting = 'Good evening';
-  }
-
-  // Get full name from localStorage
-  const fullName = localStorage.getItem('userFullName');
-  const displayName = fullName && fullName.trim() !== '' ? fullName : 'friend';
-
-  return (
-  <header className="flex items-center justify-between mb-8 sticky top-0 bg-surface-light dark:bg-surface-dark z-10 py-4 px-4 rounded-xl shadow-lg backdrop-blur-sm bg-opacity-90 dark:bg-opacity-90">
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-light to-accent-light dark:from-primary-dark dark:to-accent-dark bg-clip-text text-transparent">
-          {greeting}, {displayName}!
-      </h2>
-    </motion.div>
-    <motion.div 
-      className="flex items-center gap-3"
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.2, duration: 0.4 }}
-    >
-      <Link 
-        to="/analytics" 
-        className="btn-secondary"
-      >
-        <motion.span 
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          Analytics
-        </motion.span>
-      </Link>
-      <Link
-        to="/profile"
-        className="btn-secondary"
-      >
-        <motion.span 
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          Profile
-        </motion.span>
-      </Link>
-      <Link
-        to="/settings"
-        className="btn-secondary"
-      >
-        <motion.span 
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          Settings
-        </motion.span>
-      </Link>
-      <motion.button
-        whileHover={{ rotate: 15, scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        transition={{ type: "spring", stiffness: 400 }}
-        className="btn-secondary p-2"
-        aria-label="Toggle theme"
-      >
-        <ThemeToggleIcon />
-      </motion.button>
-    </motion.div>
-  </header>
-  );
-};
-
 const Dashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
@@ -194,7 +66,6 @@ const Dashboard = () => {
     decrementProgress,
     completeHabit,
     undoCompleteHabit,
-    habits: storeHabits // Add this to get real-time streak values
   } = useHabitStore();
   
   const { theme, toggleTheme } = useThemeStore();
@@ -351,7 +222,6 @@ const Dashboard = () => {
       decrementProgress,
       completeHabit,
       undoCompleteHabit,
-      habits: storeHabits // Add this to get real-time streak values
     } = useHabitStore();
 
     // Force re-render when actions are performed
@@ -364,17 +234,10 @@ const Dashboard = () => {
     useEffect(() => {
       // For updates from props
       setLocalHabits(habits.map(habit => {
-        // Try to get latest streak data from store
-        const storeHabit = storeHabits.find(h => h.id === habit.id);
-        if (storeHabit) {
-          return {
-            ...habit,
-            streak: storeHabit.streak
-          };
-        }
+        // Use the habits directly from props/store
         return habit;
       }));
-    }, [habits, storeHabits]);
+    }, [habits]);
     
     // Wrapper functions that update both store and local state
     const handleIncrement = (id: string) => {
@@ -383,13 +246,13 @@ const Dashboard = () => {
       setLocalHabits(prev => 
         prev.map(habit => {
           if (habit.id === id) {
-            // Get latest state from store after update
-            const storeHabit = storeHabits.find(h => h.id === id);
+            // Find habit from current habits array
+            const currentHabit = habits.find(h => h.id === id);
             const newProgress = Math.min(habit.progress + 1, habit.target);
             return {
               ...habit, 
               progress: newProgress,
-              streak: storeHabit ? storeHabit.streak : habit.streak
+              streak: currentHabit ? currentHabit.streak : habit.streak
             };
           }
           return habit;
@@ -405,12 +268,12 @@ const Dashboard = () => {
         prev.map(habit => {
           if (habit.id === id) {
             // Get latest state from store after update
-            const storeHabit = storeHabits.find(h => h.id === id);
+            const currentHabit = habits.find(h => h.id === id);
             const newProgress = Math.max(habit.progress - 1, 0);
             return {
               ...habit, 
               progress: newProgress,
-              streak: storeHabit ? storeHabit.streak : habit.streak
+              streak: currentHabit ? currentHabit.streak : habit.streak
             };
           }
           return habit;
@@ -440,11 +303,11 @@ const Dashboard = () => {
         prev.map(habit => {
           if (habit.id === id) {
             // Get latest state from store after update
-            const storeHabit = storeHabits.find(h => h.id === id);
+            const currentHabit = habits.find(h => h.id === id);
             return {
               ...habit, 
               progress: habit.target,
-              streak: storeHabit ? storeHabit.streak : habit.streak + 1
+              streak: currentHabit ? currentHabit.streak : habit.streak + 1
             }; 
           }
           return habit;
@@ -460,11 +323,11 @@ const Dashboard = () => {
         prev.map(habit => {
           if (habit.id === id) {
             // Get latest state from store after update
-            const storeHabit = storeHabits.find(h => h.id === id);
+            const currentHabit = habits.find(h => h.id === id);
             return {
               ...habit, 
               progress: 0,
-              streak: storeHabit ? storeHabit.streak : habit.streak
+              streak: currentHabit ? currentHabit.streak : habit.streak
             };
           }
           return habit;
@@ -604,7 +467,6 @@ const Dashboard = () => {
       decrementProgress,
       completeHabit,
       undoCompleteHabit,
-      habits: storeHabits // Add this to get real-time streak values
     } = useHabitStore();
     
     // Force re-render when actions are performed
@@ -617,17 +479,10 @@ const Dashboard = () => {
     useEffect(() => {
       // For updates from props
       setLocalHabits(habits.map(habit => {
-        // Try to get latest streak data from store
-        const storeHabit = storeHabits.find(h => h.id === habit.id);
-        if (storeHabit) {
-          return {
-            ...habit,
-            streak: storeHabit.streak
-          };
-        }
+        // Use the habits directly from props/store
         return habit;
       }));
-    }, [habits, storeHabits]);
+    }, [habits]);
     
     // Wrapper functions that update both store and local state
     const handleIncrement = (id: string) => {
@@ -636,13 +491,13 @@ const Dashboard = () => {
       setLocalHabits(prev => 
         prev.map(habit => {
           if (habit.id === id) {
-            // Get latest state from store after update
-            const storeHabit = storeHabits.find(h => h.id === id);
+            // Find habit from current habits array
+            const currentHabit = habits.find(h => h.id === id);
             const newProgress = Math.min(habit.progress + 1, habit.target);
             return {
               ...habit, 
               progress: newProgress,
-              streak: storeHabit ? storeHabit.streak : habit.streak
+              streak: currentHabit ? currentHabit.streak : habit.streak
             };
           }
           return habit;
@@ -658,12 +513,12 @@ const Dashboard = () => {
         prev.map(habit => {
           if (habit.id === id) {
             // Get latest state from store after update
-            const storeHabit = storeHabits.find(h => h.id === id);
+            const currentHabit = habits.find(h => h.id === id);
             const newProgress = Math.max(habit.progress - 1, 0);
             return {
               ...habit, 
               progress: newProgress,
-              streak: storeHabit ? storeHabit.streak : habit.streak
+              streak: currentHabit ? currentHabit.streak : habit.streak
             };
           }
           return habit;
@@ -693,11 +548,11 @@ const Dashboard = () => {
         prev.map(habit => {
           if (habit.id === id) {
             // Get latest state from store after update
-            const storeHabit = storeHabits.find(h => h.id === id);
+            const currentHabit = habits.find(h => h.id === id);
             return {
               ...habit, 
               progress: habit.target,
-              streak: storeHabit ? storeHabit.streak : habit.streak + 1
+              streak: currentHabit ? currentHabit.streak : habit.streak + 1
             }; 
           }
           return habit;
@@ -713,11 +568,11 @@ const Dashboard = () => {
         prev.map(habit => {
           if (habit.id === id) {
             // Get latest state from store after update
-            const storeHabit = storeHabits.find(h => h.id === id);
+            const currentHabit = habits.find(h => h.id === id);
             return {
               ...habit, 
               progress: 0,
-              streak: storeHabit ? storeHabit.streak : habit.streak
+              streak: currentHabit ? currentHabit.streak : habit.streak
             };
           }
           return habit;

@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaArrowLeft, FaCalendarAlt, FaPlus, FaFire, FaTimes, FaMoon, FaSun, FaGripVertical, FaEye, FaEyeSlash, FaThumbtack, FaCalendarDay, FaCalendarWeek, FaCalendar, FaCheck, FaEdit, FaUndo, FaTrash, FaChartLine, FaCircleNotch, FaLightbulb, FaLink } from 'react-icons/fa';
+import { FaArrowLeft, FaCalendarAlt, FaPlus, FaFire, FaTimes, FaMoon, FaSun, FaGripVertical, FaEye, FaEyeSlash, FaThumbtack, FaCalendarDay, FaCalendarWeek, FaCalendar, FaCheck, FaEdit, FaUndo, FaTrash, FaChartLine, FaLightbulb, FaLink } from 'react-icons/fa';
 import useHabitStore, { Habit, HabitCategory } from '../store/habitStore';
 import { useThemeStore } from '../store/themeStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable, DropResult, DroppableProvided, DraggableProvided } from 'react-beautiful-dnd';
 import { useConfetti } from '../hooks/useConfetti';
-import confetti from 'canvas-confetti';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 
 // Updated interface for history items to match habitStore
@@ -305,13 +304,11 @@ const CustomizableWidget = ({
 
 // Habit Detail Drawer Component
 const HabitDetailDrawer = ({ 
-  isOpen, 
   onClose, 
   habit, 
   history,
   onEdit,
   onDelete,
-  onComplete,
   onUndo
 }: { 
   isOpen: boolean; 
@@ -470,16 +467,13 @@ const HabitDetailDrawer = ({
 const Analytics = () => {
   const { 
     habits, 
-    addHabit, 
-    updateHabit, 
     deleteHabit, 
     completeHabit, 
     undoCompleteHabit, 
     getCategoryStats, 
     getWeeklyCompletion, 
     getLongestStreak,
-    getCompletionStats,
-    getHabitCalendarData
+    getCompletionStats
   } = useHabitStore();
   const { theme, toggleTheme } = useThemeStore();
   
@@ -560,7 +554,7 @@ const Analytics = () => {
   };
   
   const numDaysInRange = getNumDaysInRange();
-  const [consistencyScores, setConsistencyScores] = useState<{ habit: Habit; score: number }[]>([]);
+  const [_, setConsistencyScores] = useState<{ habit: Habit; score: number }[]>([]);
 
   // Update consistency scores whenever habits or date range changes
   useEffect(() => {
@@ -665,7 +659,7 @@ const Analytics = () => {
   };
 
   // Handler for habit editing
-  const handleEditHabit = (habit: Habit) => {
+  const handleEditHabit = () => {
     setSelectedHabitForDetail(null);
     // You would typically show the edit modal here
   };
@@ -1110,7 +1104,7 @@ const Analytics = () => {
               >
                 {widgets
                   .filter(w => w.visible !== false) // Handle both undefined and false cases
-                  .map((widget, index) => (
+                  .map((widget) => (
                   <CustomizableWidget
                     key={widget.id}
                     widget={widget}
@@ -1200,7 +1194,7 @@ const Analytics = () => {
                           }
                           
                           // Calculate dates for x-axis (last 7 days if range is longer than 7 days)
-                          const chartDates: string[] = [];
+                          // const chartDates: string[] = []; // Unused
                           const endDate = new Date(rangeEnd);
                           let startPoint = new Date(rangeStart);
                           
@@ -1586,7 +1580,7 @@ const Analytics = () => {
                               });
                               
                               // Calculate week rows and day columns
-                              const weeks = Math.ceil(dates.length / 7);
+                              // weeks removed as unused
                               
                               return (
                                 <div key={h.id} className="mb-6">
@@ -1599,9 +1593,10 @@ const Analytics = () => {
                                     {Array.from({ length: dates.length }).map((_, index) => {
                                       const date = dates[index];
                                       const isCompleted = completedDatesMap.has(date);
-                                      const dayDate = new Date(date);
-                                      const month = dayDate.getMonth();
-                                      const dayOfMonth = dayDate.getDate();
+                                      // const dayDate = new Date(date); // Unused variable
+                                      // Unused variables removed
+                                      // const month = dayDate.getMonth();
+                                      // const dayOfMonth = dayDate.getDate();
                                       
                                       // Determine color intensity based on activity
                                       let cellClass = 'bg-gray-100 dark:bg-gray-800';
@@ -2235,7 +2230,7 @@ const Analytics = () => {
                                          <div className="flex">
                                            {/* Weekday labels column */}
                                            <div className="w-8 flex flex-col">
-                                             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
+                                             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
                                                <div 
                                                  key={day} 
                                                  className="text-xs text-gray-500 h-4 flex items-center justify-end pr-2 my-0.5"
@@ -2258,7 +2253,7 @@ const Analytics = () => {
                                                  );
                                                  
                                                  const isCompleted = completionMap.get(date) || false;
-                                                 const dayDate = new Date(date);
+                                                 // const dayDate = new Date(date); // Unused
                                                  
                                                  // Determine intensity based on completion
                                                  let cellClass = "bg-gray-100 dark:bg-gray-800";

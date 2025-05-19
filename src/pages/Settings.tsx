@@ -137,7 +137,7 @@ const Settings = () => {
     const updatedWidgets = [...widgets, {
       id: newId,
       type,
-      size: 'medium',
+      size: 'medium' as 'small' | 'medium' | 'large',
       visible: true,
       pinned: false
     }];

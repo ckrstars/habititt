@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { FaArrowLeft, FaUser, FaCamera, FaTimes, FaCheck } from 'react-icons/fa';
+import { motion } from 'framer-motion';
 
 // Define stock avatar images
 const STOCK_AVATARS = [
@@ -178,97 +178,95 @@ export default function Profile() {
         </div>
 
         {/* Avatar Selector Modal */}
-        <AnimatePresence>
-          {showAvatarSelector && (
+        {showAvatarSelector && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          >
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white dark:bg-gray-800 rounded-lg p-4 w-full max-w-lg"
             >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-white dark:bg-gray-800 rounded-lg p-4 w-full max-w-lg"
-              >
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold">Choose Profile Picture</h2>
-                  <button
-                    onClick={() => setShowAvatarSelector(false)}
-                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  >
-                    <FaTimes className="w-5 h-5" />
-                  </button>
-                </div>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Choose Profile Picture</h2>
+                <button
+                  onClick={() => setShowAvatarSelector(false)}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  <FaTimes className="w-5 h-5" />
+                </button>
+              </div>
 
-                <div className="mb-4">
-                  <div className="flex justify-center mb-4">
-                    <div className="h-20 w-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-                      {profileImage ? (
-                        <img src={profileImage} alt="Selected profile" className="h-full w-full object-cover" />
-                      ) : (
-                        <FaUser className="h-8 w-8 text-gray-400 dark:text-gray-500" />
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex justify-center">
-                    <button 
-                      onClick={() => fileInputRef.current?.click()}
-                      className="btn-secondary text-sm"
-                    >
-                      Upload Custom Image
-                    </button>
-                    <input 
-                      type="file"
-                      ref={fileInputRef}
-                      className="hidden"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                    />
+              <div className="mb-4">
+                <div className="flex justify-center mb-4">
+                  <div className="h-20 w-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                    {profileImage ? (
+                      <img src={profileImage} alt="Selected profile" className="h-full w-full object-cover" />
+                    ) : (
+                      <FaUser className="h-8 w-8 text-gray-400 dark:text-gray-500" />
+                    )}
                   </div>
                 </div>
-
-                <h3 className="font-medium mb-2">Stock Avatars</h3>
-                <div className="grid grid-cols-4 gap-2 max-h-60 overflow-y-auto p-1">
-                  {STOCK_AVATARS.map((avatar) => (
-                    <button
-                      key={avatar.id}
-                      onClick={() => handleAvatarSelect(avatar.url)}
-                      className={`aspect-square rounded-lg overflow-hidden border-2 hover:border-primary-light dark:hover:border-primary-dark ${
-                        profileImage === avatar.url 
-                          ? 'border-primary-light dark:border-primary-dark' 
-                          : 'border-transparent'
-                      }`}
-                    >
-                      <img src={avatar.url} alt={avatar.id} className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex justify-end mt-4 space-x-2">
-                  <button
-                    onClick={() => {
-                      setProfileImage('');
-                      setShowAvatarSelector(false);
-                    }}
+                <div className="flex justify-center">
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
                     className="btn-secondary text-sm"
                   >
-                    Clear Image
+                    Upload Custom Image
                   </button>
-                  <button
-                    onClick={() => {
-                      setShowAvatarSelector(false);
-                    }}
-                    className="btn-primary text-sm"
-                  >
-                    <FaCheck className="mr-1 inline-block" /> Apply
-                  </button>
+                  <input 
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                  />
                 </div>
-              </motion.div>
+              </div>
+
+              <h3 className="font-medium mb-2">Stock Avatars</h3>
+              <div className="grid grid-cols-4 gap-2 max-h-60 overflow-y-auto p-1">
+                {STOCK_AVATARS.map((avatar) => (
+                  <button
+                    key={avatar.id}
+                    onClick={() => handleAvatarSelect(avatar.url)}
+                    className={`aspect-square rounded-lg overflow-hidden border-2 hover:border-primary-light dark:hover:border-primary-dark ${
+                      profileImage === avatar.url 
+                        ? 'border-primary-light dark:border-primary-dark' 
+                        : 'border-transparent'
+                    }`}
+                  >
+                    <img src={avatar.url} alt={avatar.id} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex justify-end mt-4 space-x-2">
+                <button
+                  onClick={() => {
+                    setProfileImage('');
+                    setShowAvatarSelector(false);
+                  }}
+                  className="btn-secondary text-sm"
+                >
+                  Clear Image
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAvatarSelector(false);
+                  }}
+                  className="btn-primary text-sm"
+                >
+                  <FaCheck className="mr-1 inline-block" /> Apply
+                </button>
+              </div>
             </motion.div>
-          )}
-        </AnimatePresence>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );
