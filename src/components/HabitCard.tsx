@@ -45,7 +45,7 @@ const HabitCard = ({ habit, onEdit, onDelete, onIncrement, onDecrement, onComple
         colors: [habit.color, '#ffffff', '#ffeb3b'],
         zIndex: 9999,
       });
-    }
+  }
   };
 
   // Animate streak increases
@@ -113,195 +113,195 @@ const HabitCard = ({ habit, onEdit, onDelete, onIncrement, onDecrement, onComple
 
   return (
     <>
-      <motion.div
+    <motion.div
         ref={cardRef}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        whileHover={{ scale: 1.02 }}
-        transition={{ duration: 0.2 }}
-        className="card relative border border-gray-100 dark:border-gray-800"
-        style={habit.color ? { borderLeft: `4px solid ${habit.color}` } : {}}
-      >
-        {/* Top section */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center">
-            <motion.div 
-              className="text-2xl mr-3"
-              whileHover={{ scale: 1.2, rotate: 5 }}
-              transition={{ duration: 0.2 }}
-            >
-              {habit.icon}
-            </motion.div>
-            <div>
-              <h3 className="text-xl font-semibold">{habit.name}</h3>
-              <div className="flex items-center mt-1">
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryBadgeClass()}`}>
-                  {habit.category.charAt(0).toUpperCase() + habit.category.slice(1)}
-                </span>
-                <span className="mx-1.5 text-gray-300 dark:text-gray-700">•</span>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryBadgeClass()}`}>
-                  {habit.frequency.charAt(0).toUpperCase() + habit.frequency.slice(1)}
-                </span>
-              </div>
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      whileHover={{ scale: 1.02 }}
+      transition={{ duration: 0.2 }}
+      className="card relative border border-gray-100 dark:border-gray-800"
+      style={habit.color ? { borderLeft: `4px solid ${habit.color}` } : {}}
+    >
+      {/* Top section */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center">
+          <motion.div 
+            className="text-2xl mr-3"
+            whileHover={{ scale: 1.2, rotate: 5 }}
+            transition={{ duration: 0.2 }}
+          >
+            {habit.icon}
+          </motion.div>
+          <div>
+            <h3 className="text-xl font-semibold">{habit.name}</h3>
+            <div className="flex items-center mt-1">
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryBadgeClass()}`}>
+                {habit.category.charAt(0).toUpperCase() + habit.category.slice(1)}
+              </span>
+              <span className="mx-1.5 text-gray-300 dark:text-gray-700">•</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryBadgeClass()}`}>
+                {habit.frequency.charAt(0).toUpperCase() + habit.frequency.slice(1)}
+              </span>
             </div>
           </div>
-          
-          <div className="flex items-center">
+        </div>
+        
+        <div className="flex items-center">
             {habit.reminderEnabled && (
-              <motion.span 
-                className="mr-2 text-gray-500 dark:text-gray-400"
-                whileHover={{ scale: 1.2, rotate: 15 }}
-                transition={{ duration: 0.2 }}
+            <motion.span 
+              className="mr-2 text-gray-500 dark:text-gray-400"
+              whileHover={{ scale: 1.2, rotate: 15 }}
+              transition={{ duration: 0.2 }}
                 title={`Reminder: ${habit.reminderTime || 'enabled'}`}
-              >
-                <FaBell size={14} />
-              </motion.span>
-            )}
-            
-            <motion.button 
-              className="ml-2 p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full" 
-              onClick={onEdit}
-              aria-label="Edit habit"
-              whileHover={{ rotate: 90, scale: 1.1 }}
-              transition={{ duration: 0.2 }}
             >
-              <FaEllipsisH size={14} />
-            </motion.button>
-            <motion.button
-              className="ml-2 p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900 rounded-full"
+              <FaBell size={14} />
+            </motion.span>
+          )}
+          
+          <motion.button 
+            className="ml-2 p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full" 
+            onClick={onEdit}
+            aria-label="Edit habit"
+            whileHover={{ rotate: 90, scale: 1.1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <FaEllipsisH size={14} />
+          </motion.button>
+          <motion.button
+            className="ml-2 p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900 rounded-full"
               onClick={handleDeleteClick}
-              aria-label="Delete habit"
-              whileHover={{ scale: 1.1 }}
-              transition={{ duration: 0.2 }}
-            >
+            aria-label="Delete habit"
+            whileHover={{ scale: 1.1 }}
+            transition={{ duration: 0.2 }}
+          >
               <FaTrash size={14} />
-            </motion.button>
-          </div>
+          </motion.button>
         </div>
+      </div>
 
-        {/* Description if available */}
-        {habit.description && (
-          <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
-            {habit.description}
-          </p>
-        )}
+      {/* Description if available */}
+      {habit.description && (
+        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
+          {habit.description}
+        </p>
+      )}
 
-        {/* Progress bar */}
-        <div className="progress-bar-container mb-4 h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ type: "spring", stiffness: 120, damping: 20 }}
-            className="h-full"
-            style={{ 
-              background: isComplete 
-                ? 'linear-gradient(to right, #10b981, #059669)' 
-                : `linear-gradient(to right, ${habit.color}, ${habit.color}dd)`
-            }}
-          />
-        </div>
+      {/* Progress bar */}
+      <div className="progress-bar-container mb-4 h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${progress}%` }}
+          transition={{ type: "spring", stiffness: 120, damping: 20 }}
+          className="h-full"
+          style={{ 
+            background: isComplete 
+              ? 'linear-gradient(to right, #10b981, #059669)' 
+              : `linear-gradient(to right, ${habit.color}, ${habit.color}dd)`
+          }}
+        />
+      </div>
 
-        {/* Count-based or completion-based controls */}
-        <div className="flex items-center justify-between">
+      {/* Count-based or completion-based controls */}
+      <div className="flex items-center justify-between">
           {habit.countType === 'count' ? (
-            <div className="flex items-center space-x-3">
-              <motion.button
-                onClick={onDecrement}
-                disabled={habit.progress === 0}
-                className="btn-secondary p-2 rounded-full"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                style={{ 
-                  borderColor: habit.color, 
-                  color: habit.color, 
-                  opacity: habit.progress === 0 ? 0.5 : 1
-                }}
-              >
-                <FaMinus className="w-4 h-4" />
-              </motion.button>
-              <span className="text-xl mr-1">{habit.progress}</span>
+          <div className="flex items-center space-x-3">
+            <motion.button
+              onClick={onDecrement}
+              disabled={habit.progress === 0}
+              className="btn-secondary p-2 rounded-full"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              style={{ 
+                borderColor: habit.color, 
+                color: habit.color, 
+                opacity: habit.progress === 0 ? 0.5 : 1
+              }}
+            >
+              <FaMinus className="w-4 h-4" />
+            </motion.button>
+            <span className="text-xl mr-1">{habit.progress}</span>
               <span className="text-gray-500 dark:text-gray-400 text-sm">/ {habit.target} {habit.countUnit}</span>
+            <motion.button
+              onClick={onIncrement}
+              disabled={isComplete}
+              className="btn-secondary p-2 rounded-full"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              style={{ 
+                borderColor: habit.color, 
+                color: habit.color, 
+                opacity: isComplete ? 0.5 : 1
+              }}
+            >
+              <FaPlus className="w-4 h-4" />
+            </motion.button>
+            {isComplete ? (
               <motion.button
-                onClick={onIncrement}
-                disabled={isComplete}
-                className="btn-secondary p-2 rounded-full"
+                onClick={onUndoComplete}
+                className="btn-primary p-2.5 group relative rounded-full"
+                title="Undo completion"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                style={{ 
-                  borderColor: habit.color, 
-                  color: habit.color, 
-                  opacity: isComplete ? 0.5 : 1
-                }}
+                style={{ backgroundColor: '#10b981' }}
               >
-                <FaPlus className="w-4 h-4" />
+                <FaCheck className="w-4 h-4 group-hover:opacity-0 transition-opacity" />
+                <FaUndo className="w-4 h-4 absolute inset-0 m-auto opacity-0 group-hover:opacity-100 transition-opacity" />
               </motion.button>
-              {isComplete ? (
-                <motion.button
-                  onClick={onUndoComplete}
-                  className="btn-primary p-2.5 group relative rounded-full"
-                  title="Undo completion"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  style={{ backgroundColor: '#10b981' }}
-                >
-                  <FaCheck className="w-4 h-4 group-hover:opacity-0 transition-opacity" />
-                  <FaUndo className="w-4 h-4 absolute inset-0 m-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-                </motion.button>
-              ) : (
-                <motion.button
+            ) : (
+              <motion.button
                   onClick={handleComplete}
-                  className="btn-primary p-2.5 rounded-full"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  style={{ backgroundColor: habit.color }}
-                >
-                  <FaCheck className="w-4 h-4" />
-                </motion.button>
-              )}
-            </div>
-          ) : (
+                className="btn-primary p-2.5 rounded-full"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                style={{ backgroundColor: habit.color }}
+              >
+                <FaCheck className="w-4 h-4" />
+              </motion.button>
+            )}
+          </div>
+        ) : (
             <div className="flex items-center space-x-4">
-              {isComplete ? (
-                <motion.button
-                  onClick={onUndoComplete}
+            {isComplete ? (
+              <motion.button
+                onClick={onUndoComplete}
                   className="btn-primary py-2 px-3 group relative"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  style={{ backgroundColor: '#10b981' }}
-                >
+                style={{ backgroundColor: '#10b981' }}
+              >
                   <span className="inline-flex items-center">
                     <FaCheck className="w-4 h-4 mr-2 group-hover:opacity-0 transition-opacity" />
                     <FaUndo className="w-4 h-4 mr-2 absolute left-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                     <span className="group-hover:opacity-0 transition-opacity">Done</span>
                     <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">Undo</span>
                   </span>
-                </motion.button>
-              ) : (
-                <motion.button
+              </motion.button>
+            ) : (
+              <motion.button
                   onClick={handleComplete}
                   className="btn-primary py-2 px-3"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  style={{ backgroundColor: habit.color }}
-                >
+                style={{ backgroundColor: habit.color }}
+              >
                   <span className="inline-flex items-center">
                     <FaCheck className="w-4 h-4 mr-2" />
                     Mark as done
                   </span>
-                </motion.button>
-              )}
-            </div>
-          )}
+              </motion.button>
+            )}
+          </div>
+        )}
           
-          {/* Streak indicator */}
+      {/* Streak indicator */}
           <motion.div 
             className="flex items-center bg-gray-50 dark:bg-gray-800 rounded-full px-3 py-1 text-gray-700 dark:text-gray-200"
             animate={streakControls}
           >
             <FaFire className="w-4 h-4 mr-1 text-orange-500" />
             <span className="text-sm font-medium">{habit.streak} day{habit.streak !== 1 ? 's' : ''}</span>
-          </motion.div>
+      </motion.div>
         </div>
 
         {/* Last 7 days mini calendar */}
@@ -311,7 +311,7 @@ const HabitCard = ({ habit, onEdit, onDelete, onIncrement, onDecrement, onComple
           </div>
           <div className="flex justify-between">
             {gridCells.slice(-7).map((cell, i) => (
-              <div 
+          <div
                 key={i}
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-xs transition ${
                   cell.filled 
@@ -321,10 +321,10 @@ const HabitCard = ({ habit, onEdit, onDelete, onIncrement, onDecrement, onComple
               >
                 {new Date(cell.date).getDate()}
               </div>
-            ))}
-          </div>
+        ))}
+      </div>
         </div>
-      </motion.div>
+    </motion.div>
 
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
